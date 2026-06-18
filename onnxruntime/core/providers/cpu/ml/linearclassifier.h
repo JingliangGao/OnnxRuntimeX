@@ -7,7 +7,6 @@
 #include "core/framework/op_kernel.h"
 #include "core/util/math_cpuonly.h"
 #include "ml_common.h"
-#include "core/mlas/inc/mlas.h"
 
 namespace onnxruntime {
 namespace ml {
@@ -35,7 +34,6 @@ class LinearClassifier final : public OpKernel {
   std::vector<float> intercepts_;
   std::vector<std::string> classlabels_strings_;
   std::vector<int64_t> classlabels_ints_;
-  MLAS_BACKEND_KERNEL_SELECTOR_CONFIG mlas_backend_kernel_selector_config_;
 };
 
 }  // namespace ml

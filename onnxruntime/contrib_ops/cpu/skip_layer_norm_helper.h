@@ -5,6 +5,7 @@
 
 #include "core/common/common.h"
 #include "core/providers/common.h"
+#include "contrib_ops/cpu/bert/attention_common.h"
 
 namespace onnxruntime {
 namespace contrib {

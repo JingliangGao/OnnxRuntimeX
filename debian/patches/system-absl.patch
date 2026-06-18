@@ -1,0 +1,15 @@
+Description: Use system absl lib (libabsl-dev), not yet enabled
+Forwarded: not-needed
+Author: Shengqi Chen <harry-chen@outlook.com>
+
+--- a/cmake/external/onnxruntime_external_deps.cmake
++++ b/cmake/external/onnxruntime_external_deps.cmake
+@@ -31,7 +31,7 @@
+ include(FetchContent)
+ 
+ # ABSL should be included before protobuf because protobuf may use absl
+-include(external/abseil-cpp.cmake)
++find_package(absl REQUIRED)
+ 
+ set(RE2_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+ 

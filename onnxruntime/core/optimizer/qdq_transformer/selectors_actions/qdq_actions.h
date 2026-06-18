@@ -87,7 +87,7 @@ struct MatMulReplaceWithQLinear : public Action {
 struct DQMatMulToMatMulNBitsAction : public ReplaceWithNew {
   DQMatMulToMatMulNBitsAction(int64_t accuracy_level,
                               concurrency::ThreadPool* intra_op_thread_pool,
-                              int64_t block_size_for_non_blockwise = 0);
+                              std::unordered_map<std::string, std::unique_ptr<Tensor>>* p_buffered_tensors);
 
  private:
   std::string OpType(const RuntimeState&) const override { return op_type_; }
@@ -106,7 +106,7 @@ struct DQMatMulToMatMulNBitsAction : public ReplaceWithNew {
   const std::string op_type_;
   const std::vector<NodeAndMoveInfo> value_moves_;
   concurrency::ThreadPool* intra_op_thread_pool_;
-  const int64_t block_size_for_non_blockwise_;
+  std::unordered_map<std::string, std::unique_ptr<Tensor>>* p_buffered_tensors_;
 };
 
 struct GemmReplaceWithQuant : public Action {

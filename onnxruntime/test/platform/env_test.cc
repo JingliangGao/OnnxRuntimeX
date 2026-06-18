@@ -3,7 +3,6 @@
 
 #include "core/platform/env.h"
 
-#include <filesystem>
 #include <fstream>
 
 #include "gtest/gtest.h"
@@ -54,6 +53,5 @@ TEST(PlatformEnvTest, GetErrnoInfo) {
 #pragma warning(pop)
 #endif
 }
-
 }  // namespace test
 }  // namespace onnxruntime

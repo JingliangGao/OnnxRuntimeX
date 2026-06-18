@@ -28,53 +28,8 @@
 #include "logging.h"
 #endif
 
-// C++20 has std::chrono::operator<< for std::chrono::system_clock::time_point but we need to check if usage is valid.
-// define temporary macro ORT_USE_CXX20_STD_CHRONO to determine whether to use the std::chrono or date implementation.
-#define ORT_USE_CXX20_STD_CHRONO __cpp_lib_chrono >= 201803L
-
-// Apply constraints for Apple builds
-#if __APPLE__
-#include <TargetConditionals.h>
-
-// iOS check must be first as it also has TARGET_OS_MAC set
-#if TARGET_OS_IOS
-// iOS requires version 16.3
-#if (defined(__IPHONE_OS_VERSION_MIN_REQUIRED) && __IPHONE_OS_VERSION_MIN_REQUIRED < 160300)
-#undef ORT_USE_CXX20_STD_CHRONO
-#endif
-
-#elif TARGET_OS_MAC
-// Xcode added support for C++20's std::chrono::operator<< in SDK version 14.4,
-// but the target macOS version must also be >= 13.3 for it to be used.
-#if (defined(__MAC_OS_X_VERSION_MAX_ALLOWED) && __MAC_OS_X_VERSION_MAX_ALLOWED < 140400) || \
-    (defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && __MAC_OS_X_VERSION_MIN_REQUIRED < 130300)
-#undef ORT_USE_CXX20_STD_CHRONO
-#endif
-
-#endif
-#endif  // __APPLE__
-
-#if ORT_USE_CXX20_STD_CHRONO
-namespace timestamp_stream_insertion_op_ns = std::chrono;
-#else
-#include "date/date.h"
-
-namespace timestamp_stream_insertion_op_ns = ::date;
-#endif
-
-#undef ORT_USE_CXX20_STD_CHRONO
-
 namespace onnxruntime {
 namespace logging {
-
-std::ostream& Timestamp::WriteToStream(std::ostream& os) const {
-  return timestamp_stream_insertion_op_ns::operator<<(os, time_point_);
-}
-
-std::wostream& Timestamp::WriteToWStream(std::wostream& os) const {
-  return timestamp_stream_insertion_op_ns::operator<<(os, time_point_);
-}
-
 const char* Category::onnxruntime = "onnxruntime";
 const char* Category::System = "System";
 
@@ -109,13 +64,13 @@ LoggingManager* LoggingManager::GetDefaultInstance() {
 #pragma warning(disable : 26426)
 #endif
 
-static std::mutex& DefaultLoggerMutex() noexcept {
-  static std::mutex mutex;
+static OrtMutex& DefaultLoggerMutex() noexcept {
+  static OrtMutex mutex;
   return mutex;
 }
 
 Logger* LoggingManager::s_default_logger_ = nullptr;
-std::mutex sink_mutex_;
+OrtMutex sink_mutex_;
 
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -152,7 +107,7 @@ LoggingManager::LoggingManager(std::unique_ptr<ISink> sink, Severity default_min
 
     // lock mutex to create instance, and enable logging
     // this matches the mutex usage in Shutdown
-    std::lock_guard<std::mutex> guard(DefaultLoggerMutex());
+    std::lock_guard<OrtMutex> guard(DefaultLoggerMutex());
 
     if (DefaultLoggerManagerInstance().load() != nullptr) {
       ORT_THROW("Only one instance of LoggingManager created with InstanceType::Default can exist at any point in time.");
@@ -172,7 +127,7 @@ LoggingManager::LoggingManager(std::unique_ptr<ISink> sink, Severity default_min
 LoggingManager::~LoggingManager() {
   if (owns_default_logger_) {
     // lock mutex to reset DefaultLoggerManagerInstance() and free default logger from this instance.
-    std::lock_guard<std::mutex> guard(DefaultLoggerMutex());
+    std::lock_guard<OrtMutex> guard(DefaultLoggerMutex());
 #if ((__cplusplus >= 201703L) || (defined(_MSVC_LANG) && (_MSVC_LANG >= 201703L)))
     DefaultLoggerManagerInstance().store(nullptr, std::memory_order_release);
 #else
@@ -328,7 +283,7 @@ Severity OverrideLevelWithEtw(Severity original_severity) {
 
 bool LoggingManager::AddSinkOfType(SinkType sink_type, std::function<std::unique_ptr<ISink>()> sinkFactory,
                                    logging::Severity severity) {
-  std::lock_guard<std::mutex> guard(sink_mutex_);
+  std::lock_guard<OrtMutex> guard(sink_mutex_);
   if (sink_->GetType() != SinkType::CompositeSink) {
     // Current sink is not a composite, create a new composite sink and add the current sink to it
     auto new_composite = std::make_unique<CompositeSink>();
@@ -350,7 +305,7 @@ bool LoggingManager::AddSinkOfType(SinkType sink_type, std::function<std::unique
 }
 
 void LoggingManager::RemoveSink(SinkType sink_type) {
-  std::lock_guard<std::mutex> guard(sink_mutex_);
+  std::lock_guard<OrtMutex> guard(sink_mutex_);
 
   if (sink_->GetType() == SinkType::CompositeSink) {
     auto composite_sink = static_cast<CompositeSink*>(sink_.get());

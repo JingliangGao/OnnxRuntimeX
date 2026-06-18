@@ -1,0 +1,47 @@
+Description: Remove dependency on WIL (Windows Implementation Libraries)
+ https://github.com/microsoft/wil/
+Forwarded: not-needed
+Origin: https://src.fedoraproject.org/rpms/onnxruntime/blob/f40/f/remove-wil.patch
+
+--- a/cmake/external/onnxruntime_external_deps.cmake
++++ b/cmake/external/onnxruntime_external_deps.cmake
+@@ -510,7 +510,7 @@
+   find_package(wil CONFIG REQUIRED)
+   set(WIL_TARGET "WIL::WIL")
+ else()
+-  include(wil) # FetchContent
++  #include(wil) # FetchContent
+ endif()
+ 
+ # XNNPACK EP
+@@ -532,7 +532,7 @@
+   onnxruntime_fetchcontent_makeavailable(mimalloc)
+ endif()
+ 
+-set(onnxruntime_EXTERNAL_LIBRARIES ${onnxruntime_EXTERNAL_LIBRARIES_XNNPACK} ${WIL_TARGET} nlohmann_json::nlohmann_json
++set(onnxruntime_EXTERNAL_LIBRARIES ${onnxruntime_EXTERNAL_LIBRARIES_XNNPACK} nlohmann_json::nlohmann_json
+                                    onnx onnx_proto ${PROTOBUF_LIB} re2::re2 Boost::mp11 safeint_interface
+                                    flatbuffers::flatbuffers ${GSL_TARGET} ${ABSEIL_LIBS} date::date
+                                    ${ONNXRUNTIME_CLOG_TARGET_NAME})
+--- a/cmake/onnxruntime_common.cmake
++++ b/cmake/onnxruntime_common.cmake
+@@ -127,7 +127,7 @@
+     endif()
+ endif()
+ 
+-onnxruntime_add_include_to_target(onnxruntime_common date::date ${WIL_TARGET})
++onnxruntime_add_include_to_target(onnxruntime_common date::date)
+ target_include_directories(onnxruntime_common
+     PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${ONNXRUNTIME_ROOT} ${eigen_INCLUDE_DIRS}
+     # propagate include directories of dependencies that are part of public interface
+--- a/cmake/onnxruntime_graph.cmake
++++ b/cmake/onnxruntime_graph.cmake
+@@ -96,7 +96,7 @@
+ 
+ onnxruntime_add_static_library(onnxruntime_graph ${onnxruntime_graph_src} ${orttraining_graph_src})
+ add_dependencies(onnxruntime_graph onnx_proto flatbuffers::flatbuffers)
+-onnxruntime_add_include_to_target(onnxruntime_graph onnxruntime_common ${WIL_TARGET} onnx onnx_proto ${PROTOBUF_LIB} flatbuffers::flatbuffers safeint_interface Boost::mp11)
++onnxruntime_add_include_to_target(onnxruntime_graph onnxruntime_common onnx onnx_proto ${PROTOBUF_LIB} flatbuffers::flatbuffers safeint_interface Boost::mp11)
+ 
+ if (MSVC)
+   set(ONNX_PROTOBUF_NATVIS_FILE "onnx_protobuf.natvis")

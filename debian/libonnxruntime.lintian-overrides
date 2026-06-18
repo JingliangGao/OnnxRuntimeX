@@ -1,0 +1,6 @@
+# loadable plugins
+lacks-unversioned-link-to-shared-library example: usr/lib/*/libonnxruntime_providers_*.so [usr/lib/*/libonnxruntime_providers_*.so]
+shared-library-lacks-prerequisites [usr/lib/*/libonnxruntime_providers_*.so]
+shared-library-lacks-version usr/lib/*/libonnxruntime_providers_*.so libonnxruntime_providers_*.so
+shared-library-symbols-not-tracked libonnxruntime_providers_*.so for usr/lib/*/libonnxruntime_providers_*.so [symbols]
+sharedobject-in-library-directory-missing-soname [usr/lib/*/libonnxruntime_providers_*.so]

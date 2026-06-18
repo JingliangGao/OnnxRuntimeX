@@ -1,0 +1,54 @@
+Author: Shengqi Chen <harry-chen@outlook.com>
+Description: Fix compilation with latest GCC
+Forwarded: no
+
+--- a/onnxruntime/core/session/inference_session.cc
++++ b/onnxruntime/core/session/inference_session.cc
+@@ -464,7 +464,10 @@
+       const auto disabled_list = utils::SplitString(disabled_string, ";");
+       InlinedHashSet<std::string> disabled_rules_and_transformers;
+       disabled_rules_and_transformers.reserve(disabled_list.size());
+-      disabled_rules_and_transformers.insert(disabled_list.cbegin(), disabled_list.cend());
++      // disabled_rules_and_transformers.insert(disabled_list.cbegin(), disabled_list.cend());
++      for (const auto& rule : disabled_list) {
++        disabled_rules_and_transformers.insert(std::string(rule));
++      }
+       ORT_THROW_IF_ERROR(FilterEnabledOptimizers(std::move(disabled_rules_and_transformers)));
+     }
+   }
+--- a/onnxruntime/test/providers/base_tester.h
++++ b/onnxruntime/test/providers/base_tester.h
+@@ -54,7 +54,11 @@
+ 
+   // Dims variant is needed to reduce the number of overloads
+   // MS compiler refuses to create a gsl::span from initializer_list especially if it contains a single element
++#if DISABLE_ABSEIL
++  using DimsVariant = std::variant<std::vector<int64_t>>;
++#else
+   using DimsVariant = std::variant<std::vector<int64_t>, TensorShapeVector>;
++#endif
+ 
+   template <typename T>
+   void AddInput(const char* name, std::initializer_list<int64_t> dims, std::initializer_list<T> values,
+@@ -771,7 +775,11 @@
+   bool testing_function_called_{};  // has the function that performs the actual testing been called yet?
+ 
+   gsl::span<const int64_t> ToDimsSpan(const DimsVariant& dims_var) {
++#if DISABLE_ABSEIL
++    return gsl::span<const int64_t>(std::get<0>(dims_var));
++#else
+     return std::visit([](auto&& dims) { return gsl::span<const int64_t>(dims); }, dims_var);
++#endif
+   }
+ 
+   template <typename T>
+--- a/onnxruntime/contrib_ops/cpu/utils/console_dumper.h
++++ b/onnxruntime/contrib_ops/cpu/utils/console_dumper.h
+@@ -3,6 +3,7 @@
+ 
+ #pragma once
+ #include <string>
++#include <iostream>
+ #include "core/framework/ort_value.h"
+ #include "core/framework/float16.h"
+ #include "contrib_ops/cpu/utils/debug_macros.h"

@@ -8,15 +8,9 @@
 
 namespace onnxruntime {
 namespace perftest {
-
-struct RunTiming {
-  std::chrono::duration<double> submit_timing = std::chrono::seconds(0);
-  std::chrono::duration<double> total_timing = std::chrono::seconds(0);
-};
-
 class TestSession {
  public:
-  virtual RunTiming Run() = 0;
+  virtual std::chrono::duration<double> Run() = 0;
   // TODO: implement it
   // This function won't return duration, because it may vary largely.
   // Please measure the perf at a higher level.

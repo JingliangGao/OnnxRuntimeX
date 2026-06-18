@@ -4,7 +4,6 @@
 #pragma once
 
 #include "core/common/status.h"
-#include "core/mlas/inc/mlas.h"
 
 namespace onnxruntime {
 namespace concurrency {
@@ -20,6 +19,5 @@ Calculate Softmax using CPU memory.
 */
 template <typename T>
 common::Status SoftmaxCPU(size_t N, size_t D, const T* Xdata, T* Ydata,
-                          bool logarithmic, concurrency::ThreadPool* thread_pool,
-                          const MLAS_BACKEND_KERNEL_SELECTOR_CONFIG* mlas_backend_kernel_selector_config);
+                          bool logarithmic, concurrency::ThreadPool* thread_pool);
 }  // namespace onnxruntime

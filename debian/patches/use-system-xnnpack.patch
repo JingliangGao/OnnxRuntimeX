@@ -1,0 +1,61 @@
+Description: Use xnnpack from system
+ do not try to download anything and do not link against -lkleidiai, which does not exist in archive at all
+ See https://buildd.debian.org/status/fetch.php?pkg=onnxruntime&arch=arm64&ver=1.20.1%2Bdfsg-1%7Eexp1&stamp=1738119490&raw=0
+Forward: not-need
+Author: Mo Zhou <lumin@debian.org>
+Last-Update: 2025-02-18
+--- a/cmake/external/xnnpack.cmake
++++ b/cmake/external/xnnpack.cmake
+@@ -19,7 +19,7 @@
+ 
+ # fp16 depends on psimd
+ FetchContent_Declare(psimd URL ${DEP_URL_psimd} URL_HASH SHA1=${DEP_SHA1_psimd})
+-onnxruntime_fetchcontent_makeavailable(psimd)
++#onnxruntime_fetchcontent_makeavailable(psimd)
+ set(PSIMD_SOURCE_DIR ${psimd_SOURCE_DIR})
+ 
+ block(PROPAGATE fp16_PATCH_COMMAND)
+@@ -53,15 +53,15 @@
+     URL_HASH SHA1=${DEP_SHA1_fp16}
+     PATCH_COMMAND ${fp16_PATCH_COMMAND}
+     )
+-onnxruntime_fetchcontent_makeavailable(fp16)
++#onnxruntime_fetchcontent_makeavailable(fp16)
+ 
+ # pthreadpool depends on fxdiv
+ FetchContent_Declare(fxdiv URL ${DEP_URL_fxdiv} URL_HASH SHA1=${DEP_SHA1_fxdiv})
+-onnxruntime_fetchcontent_makeavailable(fxdiv)
++#onnxruntime_fetchcontent_makeavailable(fxdiv)
+ set(FXDIV_SOURCE_DIR ${fxdiv_SOURCE_DIR})
+ 
+ FetchContent_Declare(pthreadpool URL ${DEP_URL_pthreadpool} URL_HASH SHA1=${DEP_SHA1_pthreadpool})
+-onnxruntime_fetchcontent_makeavailable(pthreadpool)
++#onnxruntime_fetchcontent_makeavailable(pthreadpool)
+ 
+ # ---  Determine target processor
+ # Why ORT_TARGET_PROCESSOR is only for XNNPACK
+@@ -115,7 +115,7 @@
+   # https://gitlab.arm.com/kleidi/kleidiai/-/blob/main/CMakeLists.txt#L134
+   set(CMAKE_SYSTEM_PROCESSOR arm64)
+   FetchContent_Declare(kleidiai URL ${DEP_URL_kleidiai} URL_HASH SHA1=${DEP_SHA1_kleidiai})
+-  onnxruntime_fetchcontent_makeavailable(kleidiai)
++  # onnxruntime_fetchcontent_makeavailable(kleidiai)
+   set(KLEIDIAI_SOURCE_DIR ${kleidiai_SOURCE_DIR})
+ endif()
+ 
+@@ -123,14 +123,11 @@
+ FetchContent_Declare(googlexnnpack URL ${DEP_URL_googlexnnpack} URL_HASH SHA1=${DEP_SHA1_googlexnnpack}
+                      PATCH_COMMAND ${Patch_EXECUTABLE} --binary --ignore-whitespace -p1 < ${PROJECT_SOURCE_DIR}/patches/xnnpack/AddEmscriptenAndIosSupport.patch
+                     )
+-onnxruntime_fetchcontent_makeavailable(googlexnnpack)
++#onnxruntime_fetchcontent_makeavailable(googlexnnpack)
+ set(XNNPACK_DIR ${googlexnnpack_SOURCE_DIR})
+ set(XNNPACK_INCLUDE_DIR ${XNNPACK_DIR}/include)
+ 
+ set(onnxruntime_EXTERNAL_LIBRARIES_XNNPACK XNNPACK microkernels-prod pthreadpool)
+-if(ORT_TARGET_PROCESSOR MATCHES "^arm64.*" AND NOT CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+-  list(APPEND onnxruntime_EXTERNAL_LIBRARIES_XNNPACK kleidiai)
+-endif()
+ 
+ # the XNNPACK CMake setup doesn't include the WASM kernels so we have to manually set those up
+ if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")

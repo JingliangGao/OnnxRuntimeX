@@ -40,8 +40,6 @@ if (onnxruntime_MINIMAL_BUILD)
     "${ONNXRUNTIME_ROOT}/core/graph/contrib_ops/onnx_function_util.cc"
     "${ONNXRUNTIME_ROOT}/core/graph/contrib_ops/shape_inference_functions.h"
     "${ONNXRUNTIME_ROOT}/core/graph/contrib_ops/shape_inference_functions.cc"
-    "${ONNXRUNTIME_ROOT}/core/graph/dml_ops/dml_defs.h"
-    "${ONNXRUNTIME_ROOT}/core/graph/dml_ops/dml_defs.cc"
     "${ONNXRUNTIME_ROOT}/core/graph/function_template.h"
     "${ONNXRUNTIME_ROOT}/core/graph/function_utils.h"
     "${ONNXRUNTIME_ROOT}/core/graph/function_utils.cc"
@@ -79,12 +77,7 @@ if (onnxruntime_DISABLE_CONTRIB_OPS)
     )
 endif()
 
-if(NOT onnxruntime_USE_DML)
-  list(APPEND onnxruntime_graph_src_exclude_patterns
-    "${ONNXRUNTIME_ROOT}/core/graph/dml_ops/*.h"
-    "${ONNXRUNTIME_ROOT}/core/graph/dml_ops/*.cc"
-    )
-endif()
+
 
 file(GLOB onnxruntime_graph_src_exclude ${onnxruntime_graph_src_exclude_patterns})
 list(REMOVE_ITEM onnxruntime_graph_src ${onnxruntime_graph_src_exclude})
@@ -96,7 +89,7 @@ endif()
 
 onnxruntime_add_static_library(onnxruntime_graph ${onnxruntime_graph_src} ${orttraining_graph_src})
 add_dependencies(onnxruntime_graph onnx_proto flatbuffers::flatbuffers)
-onnxruntime_add_include_to_target(onnxruntime_graph onnxruntime_common ${WIL_TARGET} onnx onnx_proto ${PROTOBUF_LIB} flatbuffers::flatbuffers safeint_interface Boost::mp11)
+onnxruntime_add_include_to_target(onnxruntime_graph onnxruntime_common onnx onnx_proto ${PROTOBUF_LIB} flatbuffers::flatbuffers safeint_interface Boost::mp11)
 
 if (MSVC)
   set(ONNX_PROTOBUF_NATVIS_FILE "onnx_protobuf.natvis")
@@ -157,7 +150,7 @@ endif()
 
 if (NOT onnxruntime_BUILD_SHARED_LIB)
   install(DIRECTORY ${PROJECT_SOURCE_DIR}/../include/onnxruntime/core/graph  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/onnxruntime/core)
-  install(TARGETS onnxruntime_graph EXPORT ${PROJECT_NAME}Targets
+  install(TARGETS onnxruntime_graph
             ARCHIVE   DESTINATION ${CMAKE_INSTALL_LIBDIR}
             LIBRARY   DESTINATION ${CMAKE_INSTALL_LIBDIR}
             RUNTIME   DESTINATION ${CMAKE_INSTALL_BINDIR}

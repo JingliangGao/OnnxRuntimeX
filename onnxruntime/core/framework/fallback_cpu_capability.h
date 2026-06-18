@@ -3,17 +3,12 @@
 
 #pragma once
 
-#if !defined(ORT_MINIMAL_BUILD) || defined(ORT_EXTENDED_MINIMAL_BUILD)
-
 #include <gsl/gsl>
 #include "core/common/inlined_containers_fwd.h"
 #include "core/framework/execution_provider.h"  // for IExecutionProvider::IKernelLookup
 #include "core/graph/graph_viewer.h"
 
 namespace onnxruntime {
-namespace logging {
-class Logger;
-}
 
 /**
   Returns a list of nodes that are preferred on CPU.
@@ -24,9 +19,6 @@ class Logger;
   */
 std::unordered_set<NodeIndex> GetCpuPreferredNodes(const GraphViewer& graph,
                                                    const IExecutionProvider::IKernelLookup& kernel_lookup,
-                                                   gsl::span<const NodeIndex> tentative_nodes,
-                                                   const logging::Logger& logger);
+                                                   gsl::span<const NodeIndex> tentative_nodes);
 
 }  // namespace onnxruntime
-
-#endif  // !defined(ORT_MINIMAL_BUILD) || defined(ORT_EXTENDED_MINIMAL_BUILD)

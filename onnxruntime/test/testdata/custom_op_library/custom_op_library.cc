@@ -14,6 +14,7 @@
 #include "core/framework/ortmemoryinfo.h"
 #include "cpu/cpu_ops.h"
 #include "cuda/cuda_ops.h"
+#include "rocm/rocm_ops.h"
 #include "onnxruntime_lite_custom_op.h"
 
 static const char* c_OpDomain = "test.customop";
@@ -26,7 +27,7 @@ static void AddOrtCustomOpDomainToContainer(Ort::CustomOpDomain&& domain) {
 }
 
 OrtStatus* ORT_API_CALL RegisterCustomOps(OrtSessionOptions* options, const OrtApiBase* api) {
-  Ort::InitApi(api->GetApi(ORT_API_VERSION));
+  Ort::Global<void>::api_ = api->GetApi(ORT_API_VERSION);
   OrtStatus* result = nullptr;
 
   ORT_TRY {
@@ -37,6 +38,9 @@ OrtStatus* ORT_API_CALL RegisterCustomOps(OrtSessionOptions* options, const OrtA
 
     Cuda::RegisterOps(domain);
     Cuda::RegisterOps(domain_v2);
+
+    Rocm::RegisterOps(domain);
+    Rocm::RegisterOps(domain_v2);
 
     Ort::UnownedSessionOptions session_options(options);
     session_options.Add(domain);

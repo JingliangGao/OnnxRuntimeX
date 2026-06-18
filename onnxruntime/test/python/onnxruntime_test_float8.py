@@ -23,7 +23,7 @@ import onnxruntime
 if platform.system() == "Windows" and sys.version_info[:2] >= (3, 8):
     os.add_dll_directory(os.getcwd())
 
-available_providers = list(onnxruntime.get_available_providers())
+available_providers = [provider for provider in onnxruntime.get_available_providers()]
 
 
 class TestInferenceSession(unittest.TestCase):
@@ -354,7 +354,8 @@ class TestInferenceSession(unittest.TestCase):
             assert_allclose(expect, y)
         except AssertionError as e:
             raise AssertionError(
-                f"Discrepancies with name={name}, float_name={float_name}, saturate={saturate}\nexpect={expect}\ny={y}"
+                f"Discrepancies with name={name}, float_name={float_name}, "
+                f"saturate={saturate}\nexpect={expect}\ny={y}"
             ) from e
         self.assertEqual(expect.shape, y.shape)
         self.assertEqual(expect.dtype, y.dtype)
@@ -393,7 +394,8 @@ class TestInferenceSession(unittest.TestCase):
             assert_allclose(expect, y)
         except AssertionError as e:
             raise AssertionError(
-                f"Discrepancies with name={name}, float_name={float_name}, saturate={saturate}\nexpect={expect}\ny={y}"
+                f"Discrepancies with name={name}, float_name={float_name}, "
+                f"saturate={saturate}\nexpect={expect}\ny={y}"
             ) from e
         self.assertEqual(expect.shape, y.shape)
         self.assertEqual(expect.dtype, y.dtype)
@@ -606,7 +608,8 @@ class TestInferenceSession(unittest.TestCase):
             if not saturate:
                 return
             raise AssertionError(
-                f"Discrepancies with name={name}, float_name={float_name}, saturate={saturate}\nexpect={expect}\ny={y}"
+                f"Discrepancies with name={name}, float_name={float_name}, "
+                f"saturate={saturate}\nexpect={expect}\ny={y}"
             ) from e
         self.assertEqual(expect.shape, y.shape)
         self.assertEqual(expect.dtype, y.dtype)

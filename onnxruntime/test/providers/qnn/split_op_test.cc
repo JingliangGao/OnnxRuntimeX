@@ -7,7 +7,7 @@
 
 #include "test/providers/qnn/qnn_test_utils.h"
 
-#include "core/graph/onnx_protobuf.h"
+#include "onnx/onnx_pb.h"
 #include "gtest/gtest.h"
 
 namespace onnxruntime {
@@ -60,7 +60,11 @@ static void RunSplitOpTestOnCPU(const TestInputDef<DataType>& input_def,
                                 ExpectedEPNodeAssignment expected_ep_assignment) {
   ProviderOptions provider_options;
 
-  provider_options["backend_type"] = "cpu";
+#if defined(_WIN32)
+  provider_options["backend_path"] = "QnnCpu.dll";
+#else
+  provider_options["backend_path"] = "libQnnCpu.so";
+#endif
 
   const bool split_is_input = opset >= 13;
   RunQnnModelTest(BuildSplitTestCase<DataType>(input_def, split, split_is_input, axis, num_outputs),
@@ -243,7 +247,11 @@ static void RunSplitOpTestOnHTP(const TestInputDef<DataType>& input_def,
                                 ExpectedEPNodeAssignment expected_ep_assignment) {
   ProviderOptions provider_options;
 
-  provider_options["backend_type"] = "htp";
+#if defined(_WIN32)
+  provider_options["backend_path"] = "QnnHtp.dll";
+#else
+  provider_options["backend_path"] = "libQnnHtp.so";
+#endif
 
   const bool split_is_input = opset >= 13;
   RunQnnModelTest(BuildSplitTestCase<DataType>(input_def, split, split_is_input, axis, num_outputs),
@@ -263,8 +271,11 @@ static void RunQDQSplitOpTestOnHTP(const TestInputDef<float>& input_def,
                                    bool use_contrib_qdq = false) {
   ProviderOptions provider_options;
 
-  provider_options["backend_type"] = "htp";
-  provider_options["offload_graph_io_quantization"] = "0";
+#if defined(_WIN32)
+  provider_options["backend_path"] = "QnnHtp.dll";
+#else
+  provider_options["backend_path"] = "libQnnHtp.so";
+#endif
 
   const bool split_is_input = opset >= 13;
   auto f32_model_builder = BuildSplitTestCase<float>(input_def, split, split_is_input, axis, num_outputs);

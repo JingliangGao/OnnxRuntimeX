@@ -18,7 +18,7 @@
 #include "core/common/status.h"
 #include "core/graph/op_identifier.h"
 #include "core/graph/graph.h"
-#include <mutex>
+#include "core/platform/ort_mutex.h"
 
 namespace onnxruntime {
 
@@ -129,7 +129,7 @@ class OpSchemaKernelTypeStrResolver final : public IKernelTypeStrResolver {
   // used as a cache when resolving
   // since the cache may be modified with a const instance, ensure that access to the cache is thread-safe
   mutable KernelTypeStrResolver resolver_;
-  mutable std::mutex resolver_mutex_;
+  mutable OrtMutex resolver_mutex_;
 };
 
 #endif  // !defined(ORT_MINIMAL_BUILD)

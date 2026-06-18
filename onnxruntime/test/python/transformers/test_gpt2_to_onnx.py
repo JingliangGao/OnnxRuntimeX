@@ -7,6 +7,7 @@
 import logging
 import unittest
 
+import coloredlogs
 import pytest
 from parity_utilities import find_transformers_source
 
@@ -57,6 +58,6 @@ class TestGpt2ConvertToOnnx(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(format="%(message)s")
+    coloredlogs.install(fmt="%(message)s")
     logging.getLogger("transformers").setLevel(logging.ERROR)
     unittest.main()

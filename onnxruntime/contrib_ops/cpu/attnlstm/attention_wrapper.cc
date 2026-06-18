@@ -19,8 +19,7 @@ template <typename T>
 AttentionWrapper<T>::AttentionWrapper(AllocatorPtr alloc, const logging::Logger& logger,
                                       int batch_size, int attn_context_depth, int attn_layer_depth,
                                       int inner_cell_hidden_size, bool has_attn_layer,
-                                      const IAttentionMechanism<T>& attention_mechanism, concurrency::ThreadPool* threadpool,
-                                      const MLAS_BACKEND_KERNEL_SELECTOR_CONFIG* mlas_backend_kernel_selector_config)
+                                      const IAttentionMechanism<T>& attention_mechanism, concurrency::ThreadPool* threadpool)
     : allocator_(alloc),
       logger_(logger),
       batch_size_(batch_size),
@@ -29,8 +28,7 @@ AttentionWrapper<T>::AttentionWrapper(AllocatorPtr alloc, const logging::Logger&
       inner_cell_hidden_size_(inner_cell_hidden_size),
       has_attn_layer_(has_attn_layer),
       attention_mechanism_(attention_mechanism),
-      ttp_(threadpool),
-      mlas_backend_kernel_selector_config_(mlas_backend_kernel_selector_config) {
+      ttp_(threadpool) {
   auto mem_max_steps = attention_mechanism_.GetMaxMemorySteps();
   prev_alignments_ = Allocate(allocator_, batch_size_ * mem_max_steps, prev_alignments_ptr_, true);
   alignments_ = Allocate(allocator_, batch_size_ * mem_max_steps, alignments_ptr_, true);
@@ -47,7 +45,7 @@ void AttentionWrapper<T>::ProcessOutput(const gsl::span<const T>& rnn_cell_outpu
                     batch_size_, attn_layer_depth_, inner_cell_hidden_size_, T{1.0},
                     rnn_cell_output.data(), inner_cell_hidden_size_,
                     attn_layer_cell_weights_.data(), attn_layer_depth_, T{0.0},
-                    attn_states_.data(), attn_layer_depth_, ttp_, mlas_backend_kernel_selector_config_);
+                    attn_states_.data(), attn_layer_depth_, ttp_);
   }
 
   // Get the context which is calculated within attention mechanism.
@@ -64,7 +62,7 @@ void AttentionWrapper<T>::ProcessOutput(const gsl::span<const T>& rnn_cell_outpu
                     batch_size_, attn_layer_depth_, attn_context_depth_, T{1.0},
                     attn_context_.data(), attn_context_depth_,
                     attn_layer_attn_weights_.data(), attn_layer_depth_, T{1.0},
-                    attn_states_.data(), attn_layer_depth_, ttp_, mlas_backend_kernel_selector_config_);
+                    attn_states_.data(), attn_layer_depth_, ttp_);
   }
 }
 

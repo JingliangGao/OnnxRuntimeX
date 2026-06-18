@@ -51,8 +51,7 @@ class UniDirectionalAttnLstm {
                          const ActivationFuncs::Entry& activation_func_g,
                          const ActivationFuncs::Entry& activation_func_h,
                          const float clip,
-                         onnxruntime::concurrency::ThreadPool* ttp,
-                         const MLAS_BACKEND_KERNEL_SELECTOR_CONFIG* mlas_backend_kernel_selector_config);
+                         onnxruntime::concurrency::ThreadPool* ttp);
 
   void Compute(const gsl::span<const T>& inputs,
                const gsl::span<const int>& sequence_lengths,
@@ -80,7 +79,6 @@ class UniDirectionalAttnLstm {
                         span_T_iter& C_prev_clipped, span_T_iter& C_prev_clipped_end,
                         span_T_iter& batched_output, span_T_iter& batched_output_end,
                         const gsl::span<const int>& seq_lengths,
-                        const int hidden_size_x4,
                         const int min_sequence_length,
                         const int step,
                         const int row,
@@ -154,8 +152,6 @@ class UniDirectionalAttnLstm {
   AttentionWrapper<T>& attention_wrapper_;
 
   onnxruntime::concurrency::ThreadPool* ttp_;
-
-  const MLAS_BACKEND_KERNEL_SELECTOR_CONFIG* mlas_backend_kernel_selector_config_;
 };
 
 }  // namespace detail

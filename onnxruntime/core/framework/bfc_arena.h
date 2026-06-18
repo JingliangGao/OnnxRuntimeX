@@ -27,6 +27,7 @@ limitations under the License.
 #include "core/common/logging/severity.h"
 #include "core/common/safeint.h"
 
+#include "core/platform/ort_mutex.h"
 #include "core/framework/arena_extend_strategy.h"
 #include "core/framework/allocator.h"
 
@@ -43,7 +44,7 @@ namespace onnxruntime {
 #endif
 #endif
 
-class StreamAwareBFCArena;
+class StreamAwareArena;
 // A memory allocator that implements a 'best-fit with coalescing'
 // algorithm.  This is essentially a very simple version of Doug Lea's
 // malloc (dlmalloc).
@@ -52,7 +53,7 @@ class StreamAwareBFCArena;
 // coalescing.  One assumption we make is that the process using this
 // allocator owns pretty much all of the memory, and that nearly
 // all requests to allocate memory go through this interface.
-class BFCArena : public IArena {
+class BFCArena : public IAllocator {
  public:
   static const ArenaExtendStrategy DEFAULT_ARENA_EXTEND_STRATEGY = ArenaExtendStrategy::kNextPowerOfTwo;
   static const int DEFAULT_INITIAL_CHUNK_SIZE_BYTES = 1 * 1024 * 1024;
@@ -60,6 +61,11 @@ class BFCArena : public IArena {
   static const int DEFAULT_INITIAL_GROWTH_CHUNK_SIZE_BYTES = 2 * 1024 * 1024;
   static const int64_t DEFAULT_MAX_POWER_OF_TWO_EXTEND_BYTES = 1024 * 1024 * 1024;  // 1GB
   static const size_t DEFAULT_MAX_MEM = std::numeric_limits<size_t>::max();
+
+  enum ArenaType {
+    BaseArena,
+    StreamAwareArena,
+  };
 
   BFCArena(std::unique_ptr<IAllocator> resource_allocator,
            size_t total_memory,
@@ -79,6 +85,14 @@ class BFCArena : public IArena {
   // If p is NULL, no operation is performed.
   void Free(void* p) override;
 
+  // Frees all allocation regions in which no chunk is in use.
+  // Does not free any reserved chunks.
+  // Resets the size that the arena will grow by in the next allocation to
+  // `initial_growth_chunk_size_bytes_` but ultimately all
+  // future allocation sizes are determined by the arena growth strategy
+  // and the allocation request.
+  Status Shrink();
+
   void* Reserve(size_t size) override;
 
   void GetStats(AllocatorStats* stats) override;
@@ -87,24 +101,24 @@ class BFCArena : public IArena {
 
   size_t AllocatedSize(const void* ptr);
 
-  // Frees all allocation regions in which no chunk is in use.
-  // Does not free any reserved chunks.
-  // Resets the size that the arena will grow by in the next allocation to
-  // `initial_growth_chunk_size_bytes_` but ultimately all
-  // future allocation sizes are determined by the arena growth strategy
-  // and the allocation request.
-  Status Shrink() override;
+  ArenaType GetArenaType() const { return arena_type_; }
+
+  virtual void SecureTheChunk(Stream* /*chunk_stream*/,
+                              Stream* /*target_stream*/,
+                              WaitNotificationFn /*wait_fn*/) const {}
 
  protected:
   void* AllocateRawInternal(size_t num_bytes,
                             bool dump_log_on_failure,
-                            Stream* stream);
-
+                            Stream* stream,
+                            bool enable_cross_stream_reusing,
+                            WaitNotificationFn wait_fn);
 #ifdef ORT_ENABLE_STREAM
-  // for any chunk that associated with target stream, reset it to default (nullptr in stream, sync id 0)
+  // for any chunk that associated with target stream, reset it to default (nullptr in stream, timestamp 0)
   // perform coalesce if coalesce_flag is true
   void ResetChunkOnTargetStream(Stream* target_stream, bool coalesce_flag);
 #endif
+  ArenaType arena_type_;
 
  private:
   void DeallocateRawInternal(void* ptr);
@@ -154,7 +168,7 @@ class BFCArena : public IArena {
 
     Stream* stream = nullptr;
 
-    uint64_t stream_sync_id = 0;
+    uint64_t stream_timestamp = 0;
 
     bool in_use() const { return allocation_id != -1; }
 
@@ -360,7 +374,9 @@ class BFCArena : public IArena {
   BFCArena::Chunk* FindChunkPtr(BinNum bin_num,
                                 size_t rounded_bytes,
                                 size_t num_bytes,
-                                Stream* stream);
+                                Stream* stream,
+                                bool allow_chunk_from_different_stream,
+                                WaitNotificationFn wait_fn = nullptr);
 
   // Splits the chunk specified by 'h' into two chunks, one at least
   // of size 'num_bytes'.
@@ -473,7 +489,7 @@ class BFCArena : public IArena {
 
   std::unique_ptr<IAllocator> device_allocator_;
 
-  mutable std::mutex lock_;
+  mutable OrtMutex lock_;
 
   RegionManager region_manager_;
   std::vector<Chunk> chunks_;
@@ -500,24 +516,33 @@ class BFCArena : public IArena {
 
   ORT_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(BFCArena);
 };
-
 #ifdef ORT_ENABLE_STREAM
-class StreamAwareBFCArena : public BFCArena {
+class StreamAwareArena : public BFCArena {
  public:
-  StreamAwareBFCArena(std::unique_ptr<IAllocator> resource_allocator,
-                      size_t total_memory,
-                      ArenaExtendStrategy arena_extend_strategy = DEFAULT_ARENA_EXTEND_STRATEGY,
-                      int initial_chunk_size_bytes = DEFAULT_INITIAL_CHUNK_SIZE_BYTES,
-                      int max_dead_bytes_per_chunk = DEFAULT_MAX_DEAD_BYTES_PER_CHUNK,
-                      int initial_growth_chunk_size_bytes = DEFAULT_INITIAL_GROWTH_CHUNK_SIZE_BYTES,
-                      int64_t max_power_of_two_extend_bytes = DEFAULT_MAX_POWER_OF_TWO_EXTEND_BYTES);
+  StreamAwareArena(std::unique_ptr<IAllocator> resource_allocator,
+                   size_t total_memory,
+                   bool enable_dynamic_cross_stream_sharing,
+                   ArenaExtendStrategy arena_extend_strategy = DEFAULT_ARENA_EXTEND_STRATEGY,
+                   int initial_chunk_size_bytes = DEFAULT_INITIAL_CHUNK_SIZE_BYTES,
+                   int max_dead_bytes_per_chunk = DEFAULT_MAX_DEAD_BYTES_PER_CHUNK,
+                   int initial_growth_chunk_size_bytes = DEFAULT_INITIAL_GROWTH_CHUNK_SIZE_BYTES,
+                   int64_t max_power_of_two_extend_bytes = DEFAULT_MAX_POWER_OF_TWO_EXTEND_BYTES);
 
-  bool IsStreamAware() const override { return true; }
+  // If size is 0, then this function returns either NULL,
+  // or a unique pointer value that can later be successfully
+  // passed to free(). Whatever, do not dereference that pointer
+  void* AllocOnStream(size_t size, Stream* current_stream_id, WaitNotificationFn wait_fn);
 
-  // Standard alloc behavior. Returns valid pointer if size > 0 and memory was available. Otherwise returns nullptr.
-  void* AllocOnStream(size_t size, Stream* current_stream_id) override;
+  void ReleaseStreamBuffers(Stream* stream);
 
-  void ReleaseStreamBuffers(Stream* stream) override;
+  static StreamAwareArena* FromBFCArena(BFCArena& arena) {
+    return arena.GetArenaType() == ArenaType::StreamAwareArena ? reinterpret_cast<StreamAwareArena*>(&arena) : nullptr;
+  }
+
+  virtual void SecureTheChunk(Stream* chunk_stream, Stream* target_stream, WaitNotificationFn wait_fn) const override;
+
+ private:
+  bool enable_cross_stream_reusing_;
 };
 #endif
 #ifdef __GNUC__

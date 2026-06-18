@@ -16,22 +16,18 @@ template <>
 struct has_mlas_transpose<uint8_t> : std::true_type {};
 
 template <>
-struct has_mlas_transpose<uint16_t> : std::true_type {};
-
-template <>
 struct has_mlas_transpose<uint32_t> : std::true_type {};
 
 // moving a single axis outwards where the read/write size is a power of 2 and between 8 and 64 bits.
 template <typename T>
 typename std::enable_if<!has_mlas_transpose<T>::value, void>::type SimpleTransposeSingleAxisOutwards(
     const T* input_data, T* output_data, int64_t num_loops, int64_t num_writers, int64_t writes_per_loop,
-    int64_t writes_per_writer_per_loop, concurrency::ThreadPool* tp = nullptr) {
-  ORT_UNUSED_PARAMETER(tp);
+    int64_t writes_per_writer_per_loop) {
   const T* end;
   for (int64_t l = 0; l < num_loops; ++l) {
     T* output_for_first_writer = output_data;
 
-    for (int64_t wwpl = 0; wwpl < writes_per_writer_per_loop; ++wwpl) {
+    for (auto wwpl = 0; wwpl < writes_per_writer_per_loop; ++wwpl) {
       T* output_for_current_writer = output_for_first_writer;
 
       end = input_data + num_writers;
@@ -52,10 +48,10 @@ typename std::enable_if<!has_mlas_transpose<T>::value, void>::type SimpleTranspo
 template <typename T>
 typename std::enable_if<has_mlas_transpose<T>::value, void>::type SimpleTransposeSingleAxisOutwards(
     const T* input_data, T* output_data, int64_t num_loops, int64_t num_writers, int64_t writes_per_loop,
-    int64_t writes_per_writer_per_loop, concurrency::ThreadPool* tp = nullptr) {
+    int64_t writes_per_writer_per_loop) {
   for (int64_t l = 0; l < num_loops; ++l) {
     MlasTranspose(input_data, output_data, static_cast<size_t>(writes_per_writer_per_loop),
-                  static_cast<size_t>(num_writers), tp);
+                  static_cast<size_t>(num_writers));
     input_data += writes_per_loop;
     output_data += writes_per_loop;
   }
@@ -86,25 +82,25 @@ void TransposeSingleAxisOutwards(gsl::span<const size_t> permutations, const Ten
   switch (bytes_per_write) {
     case (sizeof(uint8_t)): {
       SimpleTransposeSingleAxisOutwards(input_data, output_data, num_loops, num_writers, writes_per_loop,
-                                        writes_per_writer_per_loop, tp);
+                                        writes_per_writer_per_loop);
       break;
     }
     case (sizeof(uint16_t)): {
       SimpleTransposeSingleAxisOutwards(reinterpret_cast<const uint16_t*>(input_data),
                                         reinterpret_cast<uint16_t*>(output_data), num_loops, num_writers,
-                                        writes_per_loop, writes_per_writer_per_loop, tp);
+                                        writes_per_loop, writes_per_writer_per_loop);
       break;
     }
     case (sizeof(uint32_t)): {
       SimpleTransposeSingleAxisOutwards(reinterpret_cast<const uint32_t*>(input_data),
                                         reinterpret_cast<uint32_t*>(output_data), num_loops, num_writers,
-                                        writes_per_loop, writes_per_writer_per_loop, tp);
+                                        writes_per_loop, writes_per_writer_per_loop);
       break;
     }
     case (sizeof(uint64_t)): {
       SimpleTransposeSingleAxisOutwards(reinterpret_cast<const uint64_t*>(input_data),
                                         reinterpret_cast<uint64_t*>(output_data), num_loops, num_writers,
-                                        writes_per_loop, writes_per_writer_per_loop, tp);
+                                        writes_per_loop, writes_per_writer_per_loop);
       break;
     }
     default: {
@@ -129,13 +125,12 @@ void TransposeSingleAxisOutwards(gsl::span<const size_t> permutations, const Ten
 template <typename T>
 typename std::enable_if<!has_mlas_transpose<T>::value, void>::type SimpleTransposeSingleAxisInwards(
     const T* input_data, T* output_data, int64_t num_loops, int64_t num_readers, int64_t reads_per_loop,
-    int64_t reads_per_reader_per_loop, concurrency::ThreadPool* tp = nullptr) {
-  ORT_UNUSED_PARAMETER(tp);
+    int64_t reads_per_reader_per_loop) {
   T* end;
   for (int64_t l = 0; l < num_loops; ++l) {
     const T* input_for_first_reader = input_data;
 
-    for (int64_t rrpl = 0; rrpl < reads_per_reader_per_loop; ++rrpl) {
+    for (auto rrpl = 0; rrpl < reads_per_reader_per_loop; ++rrpl) {
       const T* input_for_current_reader = input_for_first_reader;
 
       end = output_data + num_readers;
@@ -155,10 +150,10 @@ typename std::enable_if<!has_mlas_transpose<T>::value, void>::type SimpleTranspo
 template <typename T>
 typename std::enable_if<has_mlas_transpose<T>::value, void>::type SimpleTransposeSingleAxisInwards(
     const T* input_data, T* output_data, int64_t num_loops, int64_t num_readers, int64_t reads_per_loop,
-    int64_t reads_per_reader_per_loop, concurrency::ThreadPool* tp = nullptr) {
+    int64_t reads_per_reader_per_loop) {
   for (int64_t l = 0; l < num_loops; ++l) {
     MlasTranspose(input_data, output_data, static_cast<size_t>(num_readers),
-                  static_cast<size_t>(reads_per_reader_per_loop), tp);
+                  static_cast<size_t>(reads_per_reader_per_loop));
     input_data += reads_per_loop;
     output_data += reads_per_loop;
   }
@@ -167,8 +162,7 @@ typename std::enable_if<has_mlas_transpose<T>::value, void>::type SimpleTranspos
 // moving a single axis inwards where the read/write size is a power of 2 and between 8 and 64 bits.
 //  `input_shape_override` overrides the shape of `input` for compute purposes.
 void TransposeSingleAxisInwards(gsl::span<const size_t> permutations, const Tensor& input, Tensor& output,
-                                size_t from, size_t to, const TensorShape* input_shape_override = nullptr,
-                                concurrency::ThreadPool* tp = nullptr) {
+                                size_t from, size_t to, const TensorShape* input_shape_override = nullptr) {
   ORT_UNUSED_PARAMETER(permutations);
 
   const auto& input_shape = input_shape_override ? *input_shape_override : input.Shape();
@@ -190,25 +184,25 @@ void TransposeSingleAxisInwards(gsl::span<const size_t> permutations, const Tens
   switch (bytes_per_read) {
     case (sizeof(uint8_t)): {
       SimpleTransposeSingleAxisInwards(input_data, output_data, num_loops, num_readers, reads_per_loop,
-                                       reads_per_reader_per_loop, tp);
+                                       reads_per_reader_per_loop);
       break;
     }
     case (sizeof(uint16_t)): {
       SimpleTransposeSingleAxisInwards(reinterpret_cast<const uint16_t*>(input_data),
                                        reinterpret_cast<uint16_t*>(output_data), num_loops, num_readers, reads_per_loop,
-                                       reads_per_reader_per_loop, tp);
+                                       reads_per_reader_per_loop);
       break;
     }
     case (sizeof(uint32_t)): {
       SimpleTransposeSingleAxisInwards(reinterpret_cast<const uint32_t*>(input_data),
                                        reinterpret_cast<uint32_t*>(output_data), num_loops, num_readers, reads_per_loop,
-                                       reads_per_reader_per_loop, tp);
+                                       reads_per_reader_per_loop);
       break;
     }
     case (sizeof(uint64_t)): {
       SimpleTransposeSingleAxisInwards(reinterpret_cast<const uint64_t*>(input_data),
                                        reinterpret_cast<uint64_t*>(output_data), num_loops, num_readers, reads_per_loop,
-                                       reads_per_reader_per_loop, tp);
+                                       reads_per_reader_per_loop);
       break;
     }
     default: {
@@ -216,7 +210,7 @@ void TransposeSingleAxisInwards(gsl::span<const size_t> permutations, const Tens
       for (int64_t l = 0; l < num_loops; ++l) {
         const uint8_t* input_for_first_reader = input_data;
 
-        for (int64_t rrpl = 0; rrpl < reads_per_reader_per_loop; ++rrpl) {
+        for (auto rrpl = 0; rrpl < reads_per_reader_per_loop; ++rrpl) {
           const uint8_t* input_for_current_reader = input_for_first_reader;
 
           for (int64_t r = 0; r < num_readers; ++r) {
@@ -242,7 +236,7 @@ void SingleAxisTranspose(gsl::span<const size_t> permutations, const Tensor& inp
   if (from > to) {
     TransposeSingleAxisOutwards(permutations, input, output, from, to, input_shape_override, tp);
   } else {
-    TransposeSingleAxisInwards(permutations, input, output, from, to, input_shape_override, tp);
+    TransposeSingleAxisInwards(permutations, input, output, from, to, input_shape_override);
   }
 }
 

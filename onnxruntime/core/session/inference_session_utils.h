@@ -19,9 +19,7 @@ using json = nlohmann::json;
 #endif
 
 namespace onnxruntime {
-namespace logging {
-class Logger;
-}
+
 namespace inference_session_utils {
 
 // need this value to be accessible in all builds in order to report error for attempted usage in a minimal build
@@ -62,8 +60,7 @@ class JsonConfigParser {
 
 Status ParseTuningResultsFromModelMetadata(const onnxruntime::ModelMetadata& metadata,
                                            /*out*/ std::vector<TuningResults>& results,
-                                           /*out*/ bool& key_found,
-                                           const logging::Logger& logger);
+                                           /*out*/ bool& key_found);
 
 #endif  // !defined(ORT_MINIMAL_BUILD)
 

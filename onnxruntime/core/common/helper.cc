@@ -18,7 +18,7 @@
 
 namespace onnxruntime {
 #ifdef _WIN32
-std::string ToUTF8String(std::wstring_view s) {
+std::string ToUTF8String(const std::wstring& s) {
   if (s.size() >= static_cast<size_t>(std::numeric_limits<int>::max()))
     ORT_THROW("length overflow");
 
@@ -33,7 +33,7 @@ std::string ToUTF8String(std::wstring_view s) {
   return ret;
 }
 
-std::wstring ToWideString(std::string_view s) {
+std::wstring ToWideString(const std::string& s) {
   if (s.size() >= static_cast<size_t>(std::numeric_limits<int>::max()))
     ORT_THROW("length overflow");
 

@@ -19,12 +19,14 @@ static void RunRestorePadding(
     int total_tokens,
     bool use_float16 = false,
     const bool disable_cpu = true,
-    const bool disable_cuda = false) {
+    const bool disable_cuda = false,
+    const bool disable_rocm = true) {
   int min_cuda_architecture = use_float16 ? 530 : 0;
   bool enable_cuda = HasCudaEnvironment(min_cuda_architecture) && !disable_cuda;
+  bool enable_rocm = (nullptr != DefaultRocmExecutionProvider().get()) && !disable_rocm;
   bool enable_cpu = (nullptr != DefaultCpuExecutionProvider().get()) && !use_float16 && !disable_cpu;
 
-  if (enable_cpu || enable_cuda) {
+  if (enable_cpu || enable_cuda || enable_rocm) {
     OpTester tester("RestorePadding", 1, onnxruntime::kMSDomain);
 
     // shape of inputs:
@@ -52,6 +54,12 @@ static void RunRestorePadding(
       tester.Run(OpTester::ExpectResult::kExpectSuccess, "", {}, nullptr, &execution_providers);
     }
 
+    if (enable_rocm) {
+      std::vector<std::unique_ptr<IExecutionProvider>> execution_providers;
+      execution_providers.push_back(DefaultRocmExecutionProvider());
+      tester.Run(OpTester::ExpectResult::kExpectSuccess, "", {}, nullptr, &execution_providers);
+    }
+
     if (enable_cpu) {
       std::vector<std::unique_ptr<IExecutionProvider>> execution_providers;
       execution_providers.push_back(DefaultCpuExecutionProvider());
@@ -71,12 +79,13 @@ static void RunRestorePaddingTests(
   bool use_float16 = false;
   constexpr bool disable_cpu = true;
   constexpr bool disable_cuda = false;
+  constexpr bool disable_rocm = true;
   RunRestorePadding(input_data, output_data, token_offset_data, batch_size, sequence_length, hidden_size, total_tokens,
-                    use_float16, disable_cpu, disable_cuda);
+                    use_float16, disable_cpu, disable_cuda, disable_rocm);
 
   use_float16 = true;
   RunRestorePadding(input_data, output_data, token_offset_data, batch_size, sequence_length, hidden_size, total_tokens,
-                    use_float16, disable_cpu, disable_cuda);
+                    use_float16, disable_cpu, disable_cuda, disable_rocm);
 }
 
 TEST(RestorePaddingTest, RestorePaddingBatch1_NoPadding) {

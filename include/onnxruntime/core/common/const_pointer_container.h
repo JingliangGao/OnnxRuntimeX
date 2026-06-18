@@ -79,10 +79,6 @@ class ConstPointerContainer {
     return data_[index];
   }
 
-  const T* const* data() const {
-    return data_.data();
-  }
-
  private:
   const Container& data_;
 };

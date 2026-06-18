@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#include "core/common/inlined_containers.h"
-#include "core/framework/tensorprotoutils.h"
 #include "core/graph/graph_proto_serializer.h"
 
 namespace onnxruntime {
@@ -11,8 +9,7 @@ void GraphViewerToProto(const GraphViewer& graph_view,
                         ONNX_NAMESPACE::GraphProto& graph_proto,
                         bool include_initializer,
                         bool include_outer_scope_args,
-                        ExecutionOrder order,
-                        bool include_initializer_data) {
+                        ExecutionOrder order) {
   graph_proto.set_name(graph_view.Name());
   graph_proto.set_doc_string(graph_view.Description());
 
@@ -24,13 +21,13 @@ void GraphViewerToProto(const GraphViewer& graph_view,
     *(graph_proto.mutable_output()->Add()) = output_arg->ToProto();
   }
 
-  const auto& value_infos = graph_view.GetValueInfo();
+  std::unordered_set<const onnxruntime::NodeArg*> value_info_ = graph_view.GetValueInfo();
 
   // Reserve memory for the vector to avoid reallocations
-  InlinedVector<const NodeArg*> value_info_sorted;
-  value_info_sorted.reserve(value_infos.size());
-  value_info_sorted.assign(value_infos.begin(), value_infos.end());
+  std::vector<const NodeArg*> value_info_sorted;
+  value_info_sorted.reserve(value_info_.size());
 
+  value_info_sorted.assign(value_info_.begin(), value_info_.end());
   auto sort_predicate = [](const NodeArg* v1, const NodeArg* v2) {
     return v1->Name() < v2->Name();
   };
@@ -61,57 +58,21 @@ void GraphViewerToProto(const GraphViewer& graph_view,
   }
 
   if (include_initializer) {
-    const auto& initializers = graph_view.GetAllInitializedTensors();
+    std::unordered_set<std::string> current_scope_initializer_set;
+
+    auto& initializers = graph_view.GetAllInitializedTensors();
 
     // Sort initializers to maintain consistency in model proto created across inference requests
-    InlinedVector<InitializedTensorSet::const_iterator> const_inits;
-    const_inits.reserve(initializers.size());
-    for (auto it = initializers.cbegin(), end = initializers.cend(); it != end; ++it) {
-      const_inits.push_back(it);
+    std::vector<std::string> const_inits;
+    for (auto& it : initializers) {
+      const_inits.push_back(it.first);
     }
-    std::sort(const_inits.begin(), const_inits.end(), [](const auto& i1, const auto& i2) {
-      return i1->first < i2->first;
-    });
+    std::sort(const_inits.begin(), const_inits.end());
 
-    InlinedHashSet<std::string_view> current_scope_initializer_set;
-    current_scope_initializer_set.reserve(const_inits.size());
-
-    auto get_initializer_with_data = [&](const ONNX_NAMESPACE::TensorProto& init,
-                                         ONNX_NAMESPACE::TensorProto& dest) -> Status {
-      std::unique_ptr<ONNX_NAMESPACE::TensorProto> full_init;
-      ORT_RETURN_IF_ERROR(utils::GetTensorProtoWithDataIfInMemory(init, full_init));
-      if (full_init) {
-        dest = std::move(*full_init);
-      } else {
-        dest = init;
-      }
-      return Status::OK();
-    };
-
-    // Handle this scope initializers
-    for (const auto& it : const_inits) {
-      const auto& [name, init] = *it;
-      current_scope_initializer_set.insert(name);
+    for (auto& it : const_inits) {
       auto* p_initializer = graph_proto.add_initializer();
-
-      // Do not save raw into the graph, only the metadata
-      if (!include_initializer_data && (init->has_raw_data() || utils::HasExternalDataInMemory(*init))) {
-        // Set datatype
-        if (init->has_data_type()) {
-          p_initializer->set_data_type(init->data_type());
-        }
-        // Set name
-        if (init->has_name()) {
-          p_initializer->set_name(init->name());
-        }
-
-        // Set dims
-        for (int i = 0; i < init->dims_size(); ++i) {
-          p_initializer->add_dims(init->dims()[i]);
-        }
-      } else {
-        ORT_THROW_IF_ERROR(get_initializer_with_data(*init, *p_initializer));
-      }
+      *p_initializer = *(initializers.at(it));
+      current_scope_initializer_set.insert(it);
     }
 
     // handle outer scope value which is a constant initializer
@@ -119,15 +80,13 @@ void GraphViewerToProto(const GraphViewer& graph_view,
       for (auto& node_idx : graph_view.GetNodesInTopologicalOrder(order)) {
         const auto& node = graph_view.GetNode(node_idx);
         for (const auto& input : node->InputDefs()) {
-          if (current_scope_initializer_set.count(std::string_view{input->Name()}) > 0) {
+          if (current_scope_initializer_set.find(input->Name()) != current_scope_initializer_set.end()) {
             continue;
           }
-
-          const auto* outer_scope_init = graph_view.GetConstantInitializer(input->Name(), true);
-          if (outer_scope_init != nullptr) {
-            current_scope_initializer_set.insert(input->Name());
+          if (graph_view.IsConstantInitializer(input->Name(), true)) {
             auto* p_initializer = graph_proto.add_initializer();
-            ORT_THROW_IF_ERROR(get_initializer_with_data(*outer_scope_init, *p_initializer));
+            *p_initializer = *(graph_view.GetConstantInitializer(input->Name(), true));
+            current_scope_initializer_set.insert(input->Name());
           }
         }
       }

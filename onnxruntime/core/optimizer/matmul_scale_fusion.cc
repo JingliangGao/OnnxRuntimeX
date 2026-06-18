@@ -26,22 +26,7 @@ struct ExtractScalarAsFloatDispatchTarget {
   }
 };
 
-std::optional<TensorShape> GetTensorShape(const NodeArg& node_arg) {
-  const auto* shape_proto = node_arg.Shape();
-  if (!shape_proto) {
-    return std::nullopt;
-  }
-
-  return utils::GetTensorShapeFromTensorShapeProto(*shape_proto);
-}
-
-// Note: In this context, we consider a scalar to be a single element tensor with rank up to `max_rank`.
-// The stricter definition of a scalar having an empty shape would work too, but we can accept a bit more than that.
-// In the case where `node_arg` has a non-empty shape, i.e., any dimensions with length 1, we only consider it a scalar
-// if it does not have any broadcasting effect on the Mul or Div output shape.
-// Because the dimension lengths can only be 1, we only need to consider additional leading dimensions being prepended.
-// `max_rank` should be set to the rank of the other Mul or Div input to avoid that.
-std::optional<float> GetScalarConstantInitializer(const Graph& graph, const NodeArg& node_arg, size_t max_rank) {
+std::optional<float> GetScalarConstantInitializer(const Graph& graph, const NodeArg& node_arg) {
   const auto* initializer = graph_utils::GetConstantInitializer(graph, node_arg.Name());
 
   if (!initializer) {
@@ -49,12 +34,12 @@ std::optional<float> GetScalarConstantInitializer(const Graph& graph, const Node
     return {};
   }
 
-  const auto shape = GetTensorShape(node_arg);
+  const auto* shape = node_arg.Shape();
   ORT_ENFORCE(
-      shape.has_value(),
+      shape,
       "Constant initializer NodeArg shape should not be null. NodeArg: ", node_arg.Name());
 
-  if (shape->Size() != 1 || shape->NumDimensions() > max_rank) {
+  if (utils::GetTensorShapeFromTensorShapeProto(*shape).Size() != 1) {
     // not a scalar
     return {};
   }
@@ -88,10 +73,7 @@ std::optional<std::pair<float, int>> GetScaleFromNode(
 
     if (is_excluded_initializer(scale_reciprocal_node_arg)) return std::nullopt;
 
-    const NodeArg& other_node_arg = *div_inputs[1 - scale_reciprocal_arg_index];
-    const auto max_rank = GetTensorShape(other_node_arg).value_or(TensorShape{}).NumDimensions();
-
-    const auto divisor = GetScalarConstantInitializer(graph, scale_reciprocal_node_arg, max_rank);
+    const auto divisor = GetScalarConstantInitializer(graph, scale_reciprocal_node_arg);
 
     if (!divisor.has_value()) return std::nullopt;
 
@@ -108,10 +90,7 @@ std::optional<std::pair<float, int>> GetScaleFromNode(
 
       if (is_excluded_initializer(scale_node_arg)) continue;
 
-      const NodeArg& other_node_arg = *mul_inputs[1 - scale_arg_index];
-      const auto max_rank = GetTensorShape(other_node_arg).value_or(TensorShape{}).NumDimensions();
-
-      const auto multiplier = GetScalarConstantInitializer(graph, scale_node_arg, max_rank);
+      const auto multiplier = GetScalarConstantInitializer(graph, scale_node_arg);
 
       if (!multiplier.has_value()) continue;
 
@@ -198,7 +177,8 @@ bool IsMatMulInputTypeSupported(const Node& node) {
   // if no matching key is present, any data type is allowed
   static const InlinedHashMap<std::string_view, InlinedVector<std::string_view, 4>> k_supported_data_types{
       {kCudaExecutionProvider, {"tensor(float16)", "tensor(float)", "tensor(double)", "tensor(bfloat16)"}},
-      {kCpuExecutionProvider, {"tensor(float)", "tensor(double)"}},
+      {kRocmExecutionProvider, {"tensor(float16)", "tensor(float)", "tensor(double)", "tensor(bfloat16)"}},
+      {kCpuExecutionProvider, {"tensor(float)"}},
   };
 
   const auto it = k_supported_data_types.find(node.GetExecutionProviderType());
@@ -275,6 +255,14 @@ Status ProcessNode(
       kMSDomain);
 
   matmul_scale_node.SetExecutionProviderType(node.GetExecutionProviderType());
+#ifdef USE_ROCM
+  // forward the __backwardpass, if present
+  auto& attrs = node.GetAttributes();
+  if (attrs.count("__backwardpass")) {
+    matmul_scale_node.AddAttribute("__backwardpass", static_cast<int64_t>(attrs.at("__backwardpass").i()));
+  }
+#endif
+
   {
     InlinedVector<std::reference_wrapper<Node>> nodes_to_remove{node};
 

@@ -1,0 +1,291 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: ONNX Runtime
+Source: https://github.com/microsoft/onnxruntime
+Comment: Files excluded include:
+ 1. Model files with unclear licenses (*.onnx, *.ort, *.bin).
+    See https://github.com/microsoft/onnxruntime/issues/8963
+ 2. Binary files in testdata with unknown source (*.mp3, *.png)
+ 3. Binary patches for Windows with unclear license
+Files-Excluded:
+  *.onnx
+  *.bin
+  */models/*/test/*.mp3
+  */models/*/test/*.png
+  *.ort
+  *.jar
+  .gitignore
+  .gitattributes
+  csharp/ApiDocs
+  cmake/external/git.*
+
+Files: *
+Copyright: 2017-2024 Microsoft Corporation
+           2018-2022 Intel Corporation.
+           Xilinx Inc.
+           2020 rock-chips.com Inc.
+           2019-2022, Oracle and/or its affiliates.
+           Facebook, Inc. and its affiliates.
+           2019-2020, NXP Semiconductor, Inc.
+           2016-2020, NVIDIA CORPORATION.
+           2012-2018, MIT CSAIL, Google Inc., and other contributors
+           2015-2018, Martin Moene
+           2014-2016, Baptiste Wicht
+           2020, The Microsoft DeepSpeed Team
+           2016, manylinux
+           2016, Facebook Inc.
+           2019, AMD AMDMIGraphX
+           2019, JD.com Inc. JD AI
+License: Expat
+
+Files: include/onnxruntime/core/common/common.h
+       include/onnxruntime/core/common/make_string.h
+       include/onnxruntime/core/common/status.h
+       include/onnxruntime/core/platform/threadpool.h
+       onnxruntime/contrib_ops/cpu/crop_and_resize.cc
+       onnxruntime/contrib_ops/cuda/bert/attention_softmax.h
+       onnxruntime/contrib_ops/cuda/bert/longformer_attention_softmax.h
+       onnxruntime/contrib_ops/rocm/bert/*
+       onnxruntime/core/common/status.cc
+       onnxruntime/core/common/threadpool.cc
+       onnxruntime/core/framework/bfc_arena.h
+       onnxruntime/core/platform/context.h
+       onnxruntime/core/platform/env.cc
+       onnxruntime/core/platform/env.h
+       onnxruntime/core/platform/env_time.cc
+       onnxruntime/core/platform/env_time.h
+       onnxruntime/core/platform/posix/env.cc
+       onnxruntime/core/platform/posix/env_time.cc
+       onnxruntime/core/platform/windows/env.cc
+       onnxruntime/core/platform/windows/env_time.cc
+       onnxruntime/core/providers/cpu/generator/random.cc
+       onnxruntime/core/providers/cpu/math/softmax_shared.cc
+       onnxruntime/core/providers/cpu/math/top_k.cc
+       onnxruntime/core/providers/cpu/nn/batch_norm.cc
+       onnxruntime/core/providers/cpu/nn/batch_norm.h
+       onnxruntime/core/providers/cpu/nn/conv.cc
+       onnxruntime/core/providers/cpu/nn/conv_transpose.cc
+       onnxruntime/core/providers/cpu/nn/conv_transpose.h
+       onnxruntime/core/providers/cpu/nn/conv_transpose_attributes.h
+       onnxruntime/core/providers/cpu/nn/lp_norm.h
+       onnxruntime/core/providers/cpu/nn/lrn.cc
+       onnxruntime/core/providers/cpu/object_detection/non_max_suppression.cc
+       onnxruntime/core/providers/cpu/object_detection/roialign.cc
+       onnxruntime/core/providers/cpu/tensor/onehot.cc
+       onnxruntime/core/providers/nnapi/nnapi_builtin/nnapi_lib/*
+       onnxruntime/core/util/math.h
+       onnxruntime/core/util/math_cpu.cc
+       onnxruntime/core/util/math_cpuonly.h
+       onnxruntime/python/tools/transformers/benchmark.py
+       onnxruntime/test/framework/math_test.cc
+       orttraining/orttraining/core/framework/tensorboard/crc32c.cc
+       orttraining/orttraining/core/framework/tensorboard/crc32c.h
+       orttraining/orttraining/test/gradient/gradient_checker.cc
+       orttraining/orttraining/test/gradient/gradient_checker.h
+       orttraining/orttraining/training_ops/cpu/nn/conv_grad.cc
+       orttraining/orttraining/training_ops/cpu/tensorboard/summary_op.cc
+       orttraining/orttraining/training_ops/cuda/nn/layer_norm_impl.h
+       orttraining/tools/scripts/nv_run_pretraining.py
+Copyright: 2016-2024, Facebook, Inc.
+           2015-2017, The TensorFlow Authors.
+           2018-2019, NVIDIA Corporation
+           NVIDIA Corporation and Microsoft Corporation
+           2017, The Android Open Source Project
+           2018, The HuggingFace Inc. team.
+           2018, The Google AI Language Team Authors and The HugginFace Inc. team.
+License: Apache-2.0
+
+Files: include/onnxruntime/core/platform/Barrier.h
+       include/onnxruntime/core/platform/EigenNonBlockingThreadPool.h
+Copyright: 2016, Dmitry Vyukov <dvyukov@google.com>
+License: MPL-2.0
+
+Files: onnxruntime/core/mlas/lib/qdwconv_kernelsize.cpp
+       onnxruntime/test/onnx/pb_helper.cc
+       onnxruntime/test/onnx/pb_helper.h
+       onnxruntime/test/win_getopt/mb/getopt.cc
+       onnxruntime/test/win_getopt/mb/include/getopt.h
+       onnxruntime/test/win_getopt/wide/*
+Copyright: Facebook, Inc. and its affiliates.
+           2019, Google LLC
+           2008, Google Inc.
+           1987, 1993, 1994, The Regents of the University of California.
+License: BSD-3-clause
+
+Files: winml/test/collateral/*
+Copyright: 2017
+License: BSD-2-clause and BSD-3-clause
+
+Files: onnxruntime/contrib_ops/cpu/murmur_hash3.cc
+Copyright: Microsoft.
+License: BSD-3-clause and public-domain
+
+Files: onnxruntime/core/framework/mem_pattern_planner.h
+       onnxruntime/test/python/transformers/test_parity_decoder_attention.py
+       onnxruntime/test/python/transformers/test_parity_huggingface_gpt_attention.py
+Copyright: 2017, The TensorFlow Authors.
+           2020, The HuggingFace Inc. team
+License: Apache-2.0 and Expat
+
+Files: onnxruntime/core/framework/murmurhash3.cc
+Copyright: Microsoft Corporation.
+License: Expat and public-domain
+
+Files: onnxruntime/test/providers/cpu/ml/normalizer_test.cc
+Copyright: Microsoft Corporation.
+License: BSD-3-clause and Expat
+
+Files: onnxruntime/test/testdata/*
+Copyright: The ONNX Runtime Authors.
+License: Expat
+Comment: This folder contains mainly basic test datasets in the ORT or ONNX
+ format with a corresponding python script to regenerate them. When no
+ license is specified in the header of the generating script, thus they
+ inherite of the project license i.e. MIT license.
+
+Files: onnxruntime/test/testdata/CNTK/*
+Copyright: The ONNX Runtime Authors.
+License: Expat
+Comment: Basic test datasets generated by gen.py.
+
+Files: onnxruntime/test/testdata/test_data_generation/adamw_test/*
+Copyright: The ONNX Runtime Authors.
+License: Expat
+Comment: Basic test datasets generated by adamw_test_data_generator.py.
+
+Files: onnxruntime/test/testdata/transform/*
+Copyright: The ONNX Runtime Authors.
+License: Expat
+Comment: Basic test datasets generated by the corresponding python script,
+ i.e. same filename but with a .py extension in the same folder. Sometimes,
+ the corresponding python script has a "create" prefix or a "gen" suffix.
+
+Files: onnxruntime/test/testdata/transform/approximation/*
+Copyright: The ONNX Runtime Authors.
+License: Expat
+Comment: Basic test datasets generated by gelu_approximation_gen.py
+
+Files: onnxruntime/test/testdata/transform/computation_reduction/*
+Copyright: The ONNX Runtime Authors.
+License: Expat
+Comment: Basic test datasets generated by the corresponding python script,
+ i.e. same filename but with a .py extension in the same folder.
+
+Files: onnxruntime/test/testdata/transform/cse/*
+Copyright: The ONNX Runtime Authors.
+License: Expat
+Comment: Basic test datasets generated by generate.py.
+
+Files: onnxruntime/test/testdata/transform/fusion/*
+Copyright: The ONNX Runtime Authors.
+License: Expat
+Comment: Basic test datasets generated by the corresponding python script,
+ i.e. same filename but with a .py extension in the same folder. Sometimes,
+ the corresponding python script has a "create" prefix or a "gen" suffix.
+
+Files: onnxruntime/test/testdata/transform/model_parallel/*
+Copyright: The ONNX Runtime Authors.
+License: Expat
+Comment: Basic test datasets generated by the corresponding python script,
+ i.e. same filename but with a .py extension in the same folder.
+
+Files: onnxruntime/test/testdata/transform/propagate_cast/*
+Copyright: The ONNX Runtime Authors.
+License: Expat
+Comment: Basic test datasets generated by gen_propagate_cast.py.
+
+Files: onnxruntime/test/testdata/transform/runtime_optimization/*
+Copyright: The ONNX Runtime Authors.
+License: Expat
+Comment: Basic test datasets generated by add_with_surrounding_identities_gen.py.
+
+Files: debian/*
+Copyright: 2023-2024 Collabora, Ltd.
+License: Expat
+
+License: Expat
+ Permission is hereby granted, free of charge, to any person obtaining
+ a copy of this software and associated documentation files (the
+ "Software"), to deal in the Software without restriction, including
+ without limitation the rights to use, copy, modify, merge, publish,
+ distribute, sublicense, and\/or sell copies of the Software, and to
+ permit persons to whom the Software is furnished to do so, subject to
+ the following conditions:
+ .
+ The above copyright notice and this permission notice shall be
+ included in all copies or substantial portions of the Software.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+License: Apache-2.0
+ On Debian systems you can find the full text of the Apache License at
+ /usr/share/common-licenses/Apache-2.0.
+
+License: MPL-2.0
+ Licensed under the Mozilla Public License Version 2.0.
+ .
+ On Debian systems, the complete text of the Mozilla Public License
+ Version 2.0 can be found in /usr/share/common-licenses/MPL-2.0.
+
+License: BSD-3-clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are
+ met:
+ .
+    Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ .
+    Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and\/or other materials provided with the
+    distribution.
+ .
+    Neither the name of the <ORGANIZATION> nor the names of its
+    contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+License: BSD-2-clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are
+ met:
+ .
+    Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ .
+    Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and\/or other materials provided with the
+    distribution.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+License: public-domain
+ MurmurHash3 was written by Austin Appleby, and is placed in the public
+ domain. The author hereby disclaims copyright to this source code.

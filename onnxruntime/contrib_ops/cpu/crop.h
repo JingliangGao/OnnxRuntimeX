@@ -4,9 +4,7 @@
 #pragma once
 
 #include "core/common/common.h"
-#ifndef SHARED_PROVIDER
 #include "core/framework/op_kernel.h"
-#endif
 
 #include <gsl/gsl>
 
@@ -15,10 +13,9 @@ namespace contrib {
 
 class CropBase {
  protected:
-  template <typename KernelInfoType>
-  CropBase(const KernelInfoType& info)
-      : border_(info.template GetAttrsOrDefault<int64_t>("border")),
-        scale_(info.template GetAttrsOrDefault<int64_t>("scale")) {
+  CropBase(const OpKernelInfo& info)
+      : border_(info.GetAttrsOrDefault<int64_t>("border")),
+        scale_(info.GetAttrsOrDefault<int64_t>("scale")) {
   }
 
   Status ValidateInput(const Tensor* X) const {
@@ -53,11 +50,6 @@ class CropBase {
 
     // scale = (height, width)
     if (!scale_.empty()) {
-      if (scale_.size() != 2) {
-        return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
-                               "Attribute scale needs to be specified with two elements (height, width), got ",
-                               scale_.size());
-      }
       int64_t bottomLimit = topBorder + scale_[0];
       int64_t rightLimit = leftBorder + scale_[1];
 

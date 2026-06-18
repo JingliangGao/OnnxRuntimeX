@@ -7,7 +7,7 @@
 #include <unordered_map>
 
 #include "core/common/common.h"
-#include <mutex>
+#include "core/platform/ort_mutex.h"
 #include "core/framework/allocator.h"
 #include "core/framework/tuning_results.h"
 
@@ -77,7 +77,7 @@ class TuningResultsManager {
   void Clear();
 
  private:
-  mutable std::mutex lock_;
+  mutable OrtMutex lock_;
   std::unordered_map<std::string, KernelMap> results_;
 };
 

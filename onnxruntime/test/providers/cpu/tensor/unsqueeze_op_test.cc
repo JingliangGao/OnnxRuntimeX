@@ -11,7 +11,7 @@ namespace test {
 
 // Disable TensorRT on the tests because of SegFault errors in the parser
 
-TEST(UnsqueezeOpTest, Unsqueeze_1) {
+TEST(TensorOpTest, Unsqueeze_1) {
   OpTester test("Unsqueeze");
 
   test.AddAttribute("axes", std::vector<int64_t>{1});
@@ -20,7 +20,7 @@ TEST(UnsqueezeOpTest, Unsqueeze_1) {
   test.Run(OpTester::ExpectResult::kExpectSuccess, "", {kTensorrtExecutionProvider});
 }
 
-TEST(UnsqueezeOpTest, Unsqueeze_1_int32) {
+TEST(TensorOpTest, Unsqueeze_1_int32) {
   OpTester test("Unsqueeze");
 
   test.AddAttribute("axes", std::vector<int64_t>{1});
@@ -29,31 +29,7 @@ TEST(UnsqueezeOpTest, Unsqueeze_1_int32) {
   test.Run(OpTester::ExpectResult::kExpectSuccess, "", {kTensorrtExecutionProvider});
 }
 
-#ifdef USE_WEBGPU
-TEST(UnsqueezeOpTest, Unsqueeze_1_int64) {
-  OpTester test("Unsqueeze");
-
-  test.AddAttribute("axes", std::vector<int64_t>{1});
-  test.AddInput<int64_t>("input", {2, 3, 4}, std::vector<int64_t>(2 * 3 * 4, 1));
-  test.AddOutput<int64_t>("output", {2, 1, 3, 4}, std::vector<int64_t>(2 * 3 * 4, 1));
-  ConfigOptions config_options{};
-  ASSERT_STATUS_OK(config_options.AddConfigEntry(webgpu::options::kEnableInt64, "1"));
-  auto provider = WebGpuExecutionProviderWithOptions(config_options);
-  test.ConfigEp(std::move(provider))
-      .RunWithConfig();
-}
-#endif
-
-TEST(UnsqueezeOpTest, Unsqueeze_1_bool) {
-  OpTester test("Unsqueeze");
-
-  test.AddAttribute("axes", std::vector<int64_t>{1});
-  test.AddInput<bool>("input", {2, 3, 4}, {true, false, true, false, false, true, false, true, false, true, true, false, true, false, false, true, true, true, true, false, true, false, false, true});
-  test.AddOutput<bool>("output", {2, 1, 3, 4}, {true, false, true, false, false, true, false, true, false, true, true, false, true, false, false, true, true, true, true, false, true, false, false, true});
-  test.Run(OpTester::ExpectResult::kExpectSuccess, "", {kTensorrtExecutionProvider});
-}
-
-TEST(UnsqueezeOpTest, Unsqueeze_2) {
+TEST(TensorOpTest, Unsqueeze_2) {
   OpTester test("Unsqueeze");
 
   test.AddAttribute("axes", std::vector<int64_t>{0, 4});
@@ -62,7 +38,7 @@ TEST(UnsqueezeOpTest, Unsqueeze_2) {
   test.Run();
 }
 
-TEST(UnsqueezeOpTest, Unsqueeze_3) {
+TEST(TensorOpTest, Unsqueeze_3) {
   OpTester test("Unsqueeze");
 
   test.AddAttribute("axes", std::vector<int64_t>{2, 1, 0});
@@ -71,23 +47,7 @@ TEST(UnsqueezeOpTest, Unsqueeze_3) {
   test.Run();
 }
 
-TEST(UnsqueezeOpTest, Unsqueeze_21) {
-  OpTester test("Unsqueeze", 21);
-  test.AddInput<float>("input", {}, std::vector<float>{1.0f});
-  test.AddInput<int64_t>("axes", {1}, std::vector<int64_t>{0}, true);
-  test.AddOutput<float>("output", {1}, std::vector<float>{1.0f});
-  test.Run();
-}
-
-TEST(UnsqueezeOpTest, Unsqueeze_23) {
-  OpTester test("Unsqueeze", 23);
-  test.AddInput<float>("input", {}, std::vector<float>{1.0f});
-  test.AddInput<int64_t>("axes", {1}, std::vector<int64_t>{0}, true);
-  test.AddOutput<float>("output", {1}, std::vector<float>{1.0f});
-  test.Run();
-}
-
-TEST(UnsqueezeOpTest, Unsqueeze_scalar) {
+TEST(TensorOpTest, Unsqueeze_scalar) {
   {
     OpTester test("Unsqueeze");
 
@@ -125,7 +85,7 @@ TEST(UnsqueezeOpTest, Unsqueeze_scalar) {
   run_test(true);
 }
 
-TEST(UnsqueezeOpTest, Unsqueeze_scalar_2) {
+TEST(TensorOpTest, Unsqueeze_scalar_2) {
   {
     OpTester test("Unsqueeze");
 
@@ -145,7 +105,7 @@ TEST(UnsqueezeOpTest, Unsqueeze_scalar_2) {
   run_test(true);
 }
 
-TEST(UnsqueezeOpTest, Unsqueeze_Duplicate) {
+TEST(TensorOpTest, Unsqueeze_Duplicate) {
   {
     OpTester test("Unsqueeze", 12);  // opset 1-12 has axes attribute
 
@@ -168,7 +128,7 @@ TEST(UnsqueezeOpTest, Unsqueeze_Duplicate) {
   }
 }
 
-TEST(UnsqueezeOpTest, Unsqueeze_OutOfRange) {
+TEST(TensorOpTest, Unsqueeze_OutOfRange) {
   {
     OpTester test("Unsqueeze", 12);  // opset 1-12 has axes attribute
     test.AddAttribute("axes", std::vector<int64_t>{4});
@@ -189,7 +149,7 @@ TEST(UnsqueezeOpTest, Unsqueeze_OutOfRange) {
   }
 }
 
-TEST(UnsqueezeOpTest, UnsqueezeNegAxis_3) {
+TEST(TensorOpTest, UnsqueezeNegAxis_3) {
   {
     OpTester test("Unsqueeze", 12);  // opset 1-12 has axes attribute
     test.AddAttribute("axes", std::vector<int64_t>{-4, 1, -6});
@@ -211,7 +171,7 @@ TEST(UnsqueezeOpTest, UnsqueezeNegAxis_3) {
   run_test(true);
 }
 
-TEST(UnsqueezeOpTest, Unsqueeze_1_int32_axes_input) {
+TEST(TensorOpTest, Unsqueeze_1_int32_axes_input) {
   auto run_test = [](bool axes_is_initializer) {
     OpTester test("Unsqueeze", 13);
 
@@ -225,7 +185,7 @@ TEST(UnsqueezeOpTest, Unsqueeze_1_int32_axes_input) {
   run_test(true);
 }
 
-TEST(UnsqueezeOpTest, Unsqueeze_3_axes_input) {
+TEST(TensorOpTest, Unsqueeze_3_axes_input) {
   auto run_test = [](bool axes_is_initializer) {
     OpTester test("Unsqueeze", 13);
 
@@ -240,7 +200,7 @@ TEST(UnsqueezeOpTest, Unsqueeze_3_axes_input) {
 }
 
 #if defined(USE_DNNL)
-TEST(UnsqueezeOpTest, Unsqueeze_3_axes_input_bfloat16) {
+TEST(TensorOpTest, Unsqueeze_3_axes_input_bfloat16) {
 #ifdef USE_DNNL
   if (!DnnlHasBF16Support()) {
     LOGS_DEFAULT(WARNING) << "Hardware does NOT support BF16";
@@ -258,7 +218,7 @@ TEST(UnsqueezeOpTest, Unsqueeze_3_axes_input_bfloat16) {
   test.Run(OpTester::ExpectResult::kExpectSuccess, "", {}, nullptr, &execution_providers);
 }
 
-TEST(UnsqueezeOpTest, UnsqueezeNegAxis_3_bfloat16) {
+TEST(TensorOpTest, UnsqueezeNegAxis_3_bfloat16) {
 #ifdef USE_DNNL
   if (!DnnlHasBF16Support()) {
     LOGS_DEFAULT(WARNING) << "Hardware does NOT support BF16";

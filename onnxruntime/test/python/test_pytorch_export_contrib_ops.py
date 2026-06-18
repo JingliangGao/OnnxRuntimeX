@@ -18,7 +18,7 @@ from onnxruntime.tools import pytorch_export_contrib_ops
 
 
 def _torch_version_lower_than(version: str):
-    from packaging.version import Version as LooseVersion  # pylint: disable=C0415  # noqa: PLC0415
+    from packaging.version import Version as LooseVersion  # pylint: disable=C0415
 
     return LooseVersion(torch.__version__) < LooseVersion(version)
 
@@ -43,10 +43,7 @@ def ort_test_with_input(ort_sess, input, output, rtol, atol):
     assert len(outputs) == len(ort_outs), "number of outputs differ"
 
     # compare onnxruntime and PyTorch results
-    [
-        np.testing.assert_allclose(out, ort_out, rtol=rtol, atol=atol)
-        for out, ort_out in zip(outputs, ort_outs, strict=False)
-    ]
+    [np.testing.assert_allclose(out, ort_out, rtol=rtol, atol=atol) for out, ort_out in zip(outputs, ort_outs)]
 
 
 # These set of tests verify ONNX model export and compares outputs between
@@ -58,9 +55,6 @@ class ONNXExporterTest(unittest.TestCase):
     def setUp(self):
         torch.manual_seed(0)
         pytorch_export_contrib_ops.register()
-
-    def tearDown(self):
-        pytorch_export_contrib_ops.unregister()
 
     def run_test(
         self,
@@ -104,7 +98,6 @@ class ONNXExporterTest(unittest.TestCase):
                 input_names=input_names,
                 output_names=output_names,
                 custom_opsets=custom_opsets,
-                dynamo=False,
             )
 
             # compute onnxruntime output prediction
@@ -147,13 +140,12 @@ class ONNXExporterTest(unittest.TestCase):
             f,
             opset_version=self.opset_version,
             custom_opsets={"com.microsoft": 1},
-            dynamo=False,
         )
         f.seek(0)
         onnx_model = onnx.load(f)
-        # Default GELU should be mapped to ORT contrib Gelu for performance.
-        gelu_nodes = [n for n in onnx_model.graph.node if n.op_type == "Gelu" and n.domain == "com.microsoft"]
-        self.assertEqual(len(gelu_nodes), 1)
+        node = onnx_model.graph.node[0]
+        self.assertEqual(node.op_type, "Gelu")
+        self.assertEqual(node.domain, "com.microsoft")
 
     @parameterized.parameterized.expand([("default_approximate", "none"), ("tanh_approximate", "tanh")])
     @unittest.skipIf(_torch_version_lower_than("1.12"), "Gelu's approximate parameter unsupported in PyTorch < 1.12")
@@ -235,8 +227,8 @@ class ONNXExporterTest(unittest.TestCase):
 # IR version 4 style export.
 ONNXExporterTest_opset9_IRv4 = type(
     "TestONNXRuntime_opset9_IRv4",
-    (ONNXExporterTest,),
-    dict(keep_initializers_as_inputs=False),
+    (unittest.TestCase,),
+    dict(ONNXExporterTest.__dict__, keep_initializers_as_inputs=False),
 )
 
 

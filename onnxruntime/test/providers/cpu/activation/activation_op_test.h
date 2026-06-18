@@ -20,8 +20,7 @@ inline void TestActivationOp(const char* szOp, const std::vector<std::vector<T>>
                              const std::unordered_map<std::string, float> float_attribs = {},
                              const std::unordered_map<std::string, std::string> string_attribs = {},
                              bool is_tensorrt_supported = true, int opset_version = 7,
-                             const char* domain = kOnnxDomain,
-                             BaseTester::CustomOutputVerifierFn custom_output_verifier = nullptr) {
+                             const char* domain = kOnnxDomain) {
   for (const std::vector<T>& input_vals : input_vals_vec) {
     OpTester test(szOp, opset_version, domain);
 
@@ -58,14 +57,6 @@ inline void TestActivationOp(const char* szOp, const std::vector<std::vector<T>>
       excluded_providers.insert(kQnnExecutionProvider);
     }
 #endif
-// Disabled because QNN SDK 2.17 Relu treats inf as FLT_MAX.
-// QNN lowers ThresholdedRelu to sub -> relu -> sign -> mul.
-#if defined(USE_QNN)
-    int thresholdedrelu = strcmp(szOp, "ThresholdedRelu");
-    if (thresholdedrelu == 0) {
-      excluded_providers.insert(kQnnExecutionProvider);
-    }
-#endif
 // Use relative error because of computation error for float::max
 #if defined(USE_DNNL)
     int gelu = strcmp(szOp, "Gelu");
@@ -81,10 +72,6 @@ inline void TestActivationOp(const char* szOp, const std::vector<std::vector<T>>
 
     if (strcmp(szOp, "QuickGelu") == 0) {
       test.SetOutputTolerance(0.0001f);
-    }
-
-    if (custom_output_verifier) {
-      test.SetCustomOutputVerifier(custom_output_verifier);
     }
 
     test.Run(OpTester::ExpectResult::kExpectSuccess, "", excluded_providers);
@@ -118,12 +105,7 @@ class ActivationOpTest : public ::testing::Test {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<float> dist(low, high);
-#ifdef USE_COREML
-    // please check onnxruntime/onnxruntime/core/providers/coreml/builders/helper.cc:81
-    std::vector<std::size_t> batch_size_list = {1, 2, 4, 9, 100};
-#else
     std::vector<std::size_t> batch_size_list = {1, 2, 4, 9, 100000};
-#endif
     for (auto batch_size : batch_size_list) {
       std::vector<float> vec(batch_size);
       for (size_t i = 0; i != batch_size; ++i) {

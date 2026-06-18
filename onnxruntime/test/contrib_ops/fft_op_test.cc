@@ -8,11 +8,14 @@
 namespace onnxruntime {
 namespace test {
 TEST(ContribOpTest, Rfft) {
-  if (DefaultCudaExecutionProvider() == nullptr) return;
+  if (DefaultCudaExecutionProvider() == nullptr && DefaultRocmExecutionProvider() == nullptr) return;
 
   std::vector<std::unique_ptr<IExecutionProvider>> execution_providers;
   if (DefaultCudaExecutionProvider() != nullptr) {
     execution_providers.push_back(DefaultCudaExecutionProvider());
+  }
+  if (DefaultRocmExecutionProvider() != nullptr) {
+    execution_providers.push_back(DefaultRocmExecutionProvider());
   }
 
   OpTester test("Rfft", 1, onnxruntime::kMSDomain);
@@ -27,11 +30,14 @@ TEST(ContribOpTest, Rfft) {
 }
 
 TEST(ContribOpTest, Irfft) {
-  if (DefaultCudaExecutionProvider() == nullptr) return;
+  if (DefaultCudaExecutionProvider() == nullptr && DefaultRocmExecutionProvider() == nullptr) return;
 
   std::vector<std::unique_ptr<IExecutionProvider>> execution_providers;
   if (DefaultCudaExecutionProvider() != nullptr) {
     execution_providers.push_back(DefaultCudaExecutionProvider());
+  }
+  if (DefaultRocmExecutionProvider() != nullptr) {
+    execution_providers.push_back(DefaultRocmExecutionProvider());
   }
 
   OpTester test("Irfft", 1, onnxruntime::kMSDomain);

@@ -26,7 +26,6 @@ class ITensorAllocator {
                                                   InlinedVector<BufferUniquePtr>& weights_buffers);
 
   AllocatorPtr GetAllocator(const OrtDevice& device);
-  AllocatorPtr GetInitializerAllocator(const OrtDevice& device);
 
   /**
    *

@@ -8,8 +8,6 @@
 #include "core/framework/op_kernel.h"
 #include "einsum_utils/einsum_typed_compute_processor.h"
 #endif
-
-#include "core/providers/cpu/mlas_backend_kernel_selector_config_utils.h"
 #include "einsum_utils/einsum_compute_preprocessor.h"
 
 namespace onnxruntime {
@@ -20,7 +18,6 @@ class Einsum : public OpKernel {
     ORT_ENFORCE(info.GetAttr<std::string>("equation", &equation_).IsOK(),
                 "Missing 'equation' attribute");
     einsum_equation_preprocessor_ = std::make_unique<EinsumEquationPreprocessor>(equation_);
-    SetupMlasBackendKernelSelectorFromConfigOptions(mlas_backend_kernel_selector_config_, info.GetConfigOptions());
   }
 
   virtual Status Compute(OpKernelContext* context) const override;
@@ -32,7 +29,6 @@ class Einsum : public OpKernel {
 
   std::string equation_;
   std::unique_ptr<EinsumEquationPreprocessor> einsum_equation_preprocessor_;
-  MLAS_BACKEND_KERNEL_SELECTOR_CONFIG mlas_backend_kernel_selector_config_;
 };
 
 }  // namespace onnxruntime

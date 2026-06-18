@@ -17,14 +17,7 @@ namespace utils {
 std::size_t GetPeakWorkingSetSize() {
   struct rusage rusage;
   getrusage(RUSAGE_SELF, &rusage);
-
-#if defined(__APPLE__)
-  constexpr size_t kBytesPerMaxRssUnit = 1;
-#else
-  constexpr size_t kBytesPerMaxRssUnit = 1024;
-#endif
-
-  return static_cast<size_t>(rusage.ru_maxrss) * kBytesPerMaxRssUnit;
+  return static_cast<size_t>(rusage.ru_maxrss * 1024L);
 }
 
 class CPUUsage : public ICPUUsage {

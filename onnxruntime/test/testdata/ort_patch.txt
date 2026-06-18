@@ -1,0 +1,17 @@
+./squeezenet/model_opset11.with_runtime_opt.ort
+./ort_github_issue_17000.ort
+./transform/runtime_optimization/qdq_convs.runtime_optimizations.ort
+./transform/runtime_optimization/matmulnbits_add.runtime_optimizations.ort
+./transform/runtime_optimization/conv_clip11.runtime_optimizations.ort
+./transform/runtime_optimization/qdq_convs.extended.ort
+./transform/runtime_optimization/qdq_convs.runtime_optimizations.v4.ort
+./sklearn_bin_voting_classifier_soft.onnx.ort
+./mnist.internal_testing_ep.ort
+./mnist.basic.v4.ort
+./ort_minimal_test_models/sparse_initializer_handling.onnx.ort
+./training_api/ort_format/optimizer_model.ort
+./training_api/ort_format/eval_model.ort
+./training_api/ort_format/training_model.ort
+./foo_1.onnx.ort
+./mnist.basic.ort
+./ort_github_issue_4031.onnx.ort

@@ -69,10 +69,7 @@ TEST(MeanVarianceNormalizationTest, DefaultAxes) {
   OpTester test("MeanVarianceNormalization", 9);
   test.AddInput<float>("input", {N, C, H, W}, X);
   test.AddOutput<float>("output", {N, C, H, W}, result);
-  // DML currently has known failures in this 4D default-axes MVN coverage.
-  // See https://github.com/microsoft/onnxruntime/issues/27933 and remove this exclusion once
-  // that issue is fixed.
-  test.Run(OpTester::ExpectResult::kExpectSuccess, "", {kDmlExecutionProvider});
+  test.Run();
 }
 
 static void TestMeanVarianceNormalizationOverAllAxes(const std::vector<int64_t>& shape) {
@@ -93,14 +90,7 @@ static void TestMeanVarianceNormalizationOverAllAxes(const std::vector<int64_t>&
   test.AddInput<float>("input", shape, X);
   test.AddOutput<float>("output", shape, Y);
 
-  if (shape.size() == 4) {
-    // Restrict the DML exclusion to the known failing 4D all-axes coverage.
-    // See https://github.com/microsoft/onnxruntime/issues/27933 and remove this exclusion once
-    // that issue is fixed.
-    test.Run(OpTester::ExpectResult::kExpectSuccess, "", {kDmlExecutionProvider});
-  } else {
-    test.Run();
-  }
+  test.Run();
 }
 
 TEST(MeanVarianceNormalizationTest, AllAxes) {
@@ -167,7 +157,6 @@ TEST(MeanVarianceNormalizationTest, AxesSubsets5D) {
     test.AddOutput<float>("output", shape, Y.data(), Y.size());
 
     if (DefaultDmlExecutionProvider().get() != nullptr) {
-      // 5D subset-axis coverage stays enabled for DML.
       test.SetOutputTolerance(0.001f);
     }
 

@@ -8,7 +8,6 @@
 
 #include "core/providers/common.h"
 #include "core/providers/cpu/signal/utils.h"
-#include <numbers>
 
 namespace onnxruntime {
 ONNX_CPU_OPERATOR_KERNEL(HannWindow, 17,
@@ -54,7 +53,7 @@ struct CosineSumWindow {
     auto* Y_data = reinterpret_cast<T*>(Y->MutableDataRaw());
 
     // Calculate the radians to increment per sample
-    constexpr double pi = std::numbers::pi;
+    constexpr double pi = M_PI;
     constexpr double tau = 2 * pi;
     const size_t denominator = is_periodic ? size : size - 1;
     const double angular_increment = tau / denominator;

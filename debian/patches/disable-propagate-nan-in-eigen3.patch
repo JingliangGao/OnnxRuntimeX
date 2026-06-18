@@ -1,0 +1,104 @@
+Author: Shengqi Chen <harry-chen@outlook.com>
+Description: Fix compilation with Eigen 3.4.0
+ onnxruntime >= 1.19.0 invokes eigen3 with PropagateNaN, which is not supported in eigen 3.4.0.
+ This patch removes PropagateNaN from code.
+ See: https://github.com/microsoft/onnxruntime/commit/7543dd040b2d32109a2718d7276d3aca1edadaae
+ See: https://gitlab.com/libeigen/eigen/-/commit/5d918b82a80118ebb19572770a0c8e1f5fe06b91
+Forwarded: not-needed
+
+--- a/onnxruntime/core/providers/cpu/math/element_wise_ops.cc
++++ b/onnxruntime/core/providers/cpu/math/element_wise_ops.cc
+@@ -705,7 +705,7 @@
+   for (int index = 1; index < inputCount; index++) {
+     auto& data_n = *ctx->Input<Tensor>(index);
+     ORT_ENFORCE(data_n.Shape() == shape, "All inputs must have the same shape");
+-    min = min.array().template min<Eigen::PropagateNaN>(EigenMap<float>(data_n).array());
++    min = min.array().min(EigenMap<float>(data_n).array());
+   }
+ 
+   return Status::OK();
+@@ -721,15 +721,15 @@
+     ProcessBroadcastSpanFuncs funcs{
+         [](BroadcastHelper& per_iter_bh) {
+           per_iter_bh.OutputEigen<T>() =
+-              per_iter_bh.EigenInput1<T>().array().template min<Eigen::PropagateNaN>(per_iter_bh.ScalarInput0<T>());
++              per_iter_bh.EigenInput1<T>().array().min(per_iter_bh.ScalarInput0<T>());
+         },
+         [](BroadcastHelper& per_iter_bh) {
+           per_iter_bh.OutputEigen<T>() =
+-              per_iter_bh.EigenInput0<T>().array().template min<Eigen::PropagateNaN>(per_iter_bh.ScalarInput1<T>());
++              per_iter_bh.EigenInput0<T>().array().min(per_iter_bh.ScalarInput1<T>());
+         },
+         [](BroadcastHelper& per_iter_bh) {
+           per_iter_bh.OutputEigen<T>() =
+-              per_iter_bh.EigenInput0<T>().array().template min<Eigen::PropagateNaN>(
++              per_iter_bh.EigenInput0<T>().array().min(
+                   per_iter_bh.EigenInput1<T>().array());
+         }};
+ 
+@@ -757,10 +757,10 @@
+         EigenVectorArrayMap<Eigen::half> output_vec_map(output, num_elements);
+ 
+         if (is_min) {
+-          output_vec_map = input_1_vec_map.template min<Eigen::PropagateNaN>(
++          output_vec_map = input_1_vec_map.min(
+               static_cast<Eigen::half>(per_iter_bh.ScalarInput0<MLFloat16>()));
+         } else {
+-          output_vec_map = input_1_vec_map.template max<Eigen::PropagateNaN>(
++          output_vec_map = input_1_vec_map.max(
+               static_cast<Eigen::half>(per_iter_bh.ScalarInput0<MLFloat16>()));
+         }
+       },
+@@ -774,10 +774,10 @@
+         EigenVectorArrayMap<Eigen::half> output_vec_map(output, num_elements);
+ 
+         if (is_min) {
+-          output_vec_map = input_0_vec_map.template min<Eigen::PropagateNaN>(
++          output_vec_map = input_0_vec_map.min(
+               static_cast<Eigen::half>(per_iter_bh.ScalarInput1<MLFloat16>()));
+         } else {
+-          output_vec_map = input_0_vec_map.template max<Eigen::PropagateNaN>(
++          output_vec_map = input_0_vec_map.max(
+               static_cast<Eigen::half>(per_iter_bh.ScalarInput1<MLFloat16>()));
+         }
+       },
+@@ -794,9 +794,9 @@
+         EigenVectorArrayMap<Eigen::half> output_vec_map(output, num_elements);
+ 
+         if (is_min) {
+-          output_vec_map = input_0_vec_map.template min<Eigen::PropagateNaN>(input_1_vec_map);
++          output_vec_map = input_0_vec_map.min(input_1_vec_map);
+         } else {
+-          output_vec_map = input_0_vec_map.template max<Eigen::PropagateNaN>(input_1_vec_map);
++          output_vec_map = input_0_vec_map.max(input_1_vec_map);
+         }
+       }};
+ 
+@@ -832,7 +832,7 @@
+   for (int index = 1; index < inputCount; index++) {
+     auto& data_n = *ctx->Input<Tensor>(index);
+     ORT_ENFORCE(data_n.Shape() == shape, "All inputs must have the same shape");
+-    max = max.array().template max<Eigen::PropagateNaN>(EigenMap<float>(data_n).array());
++    max = max.array().max(EigenMap<float>(data_n).array());
+   }
+ 
+   return Status::OK();
+@@ -848,15 +848,15 @@
+     ProcessBroadcastSpanFuncs funcs{
+         [](BroadcastHelper& per_iter_bh) {
+           per_iter_bh.OutputEigen<T>() =
+-              per_iter_bh.EigenInput1<T>().array().template max<Eigen::PropagateNaN>(per_iter_bh.ScalarInput0<T>());
++              per_iter_bh.EigenInput1<T>().array().max(per_iter_bh.ScalarInput0<T>());
+         },
+         [](BroadcastHelper& per_iter_bh) {
+           per_iter_bh.OutputEigen<T>() =
+-              per_iter_bh.EigenInput0<T>().array().template max<Eigen::PropagateNaN>(per_iter_bh.ScalarInput1<T>());
++              per_iter_bh.EigenInput0<T>().array().max(per_iter_bh.ScalarInput1<T>());
+         },
+         [](BroadcastHelper& per_iter_bh) {
+           per_iter_bh.OutputEigen<T>() =
+-              per_iter_bh.EigenInput0<T>().array().template max<Eigen::PropagateNaN>(
++              per_iter_bh.EigenInput0<T>().array().max(
+                   per_iter_bh.EigenInput1<T>().array());
+         }};
+ 

@@ -12,9 +12,8 @@ enum class TransformerLevel : int {
   Level1,       // basic optimizations
   Level2,       // extended optimizations
   Level3,       // layout optimizations
-  Level4,       // unsupported datatypes optimizations
   // The max level should always be same as the last level.
-  MaxLevel = Level4
+  MaxLevel = Level3
 };
 
 }  // namespace onnxruntime

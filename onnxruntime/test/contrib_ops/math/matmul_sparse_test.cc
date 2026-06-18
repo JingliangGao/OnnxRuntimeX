@@ -140,6 +140,7 @@ void resize(Index size, double reserveSizeFactor = 0) {
 }
 */
 #if !defined(DISABLE_SPARSE_TENSORS)
+#if !defined(__arm__)
 TEST(SparseToDenseMatMul, TestCsr) {
   constexpr int64_t rows = 9;
   constexpr int64_t cols = 9;
@@ -260,6 +261,7 @@ TEST(SparseToDenseMatMul, TestCsr) {
     tester.Run(OpTester::ExpectResult::kExpectSuccess);
   }
 }
+#endif // #if !defined(__arm__)
 
 TEST(SparseToDenseMatMul, TestCoo) {
   constexpr int64_t rows = 9;

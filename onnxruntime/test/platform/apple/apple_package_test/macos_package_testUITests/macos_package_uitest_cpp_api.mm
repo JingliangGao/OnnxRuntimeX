@@ -35,9 +35,8 @@ void testSigmoid(const char* modelPath, bool useCoreML = false, bool useWebGPU =
 
 #if COREML_EP_AVAILABLE
   if (useCoreML) {
-    std::unordered_map<std::string, std::string> provider_options = {
-        {kCoremlProviderOption_MLComputeUnits, "CPUOnly"}};
-    session_options.AppendExecutionProvider("CoreML", provider_options);
+    const uint32_t flags = COREML_FLAG_USE_CPU_ONLY;
+    Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CoreML(session_options, flags));
   }
 #else
   (void)useCoreML;
