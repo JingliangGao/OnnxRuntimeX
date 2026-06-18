@@ -180,6 +180,7 @@ void RunQuantGemmTestBatch(const int M, const int N, const int K) {
                    false /*per_column*/);
 }
 
+#if !defined(__arm__)
 TEST(QuantGemmTest, Scalar) {
   RunQuantGemmTestBatch(1, 1, 32);
   RunQuantGemmTestBatch(1, 1, 260);
@@ -194,6 +195,7 @@ TEST(QuantGemmTest, GEMV) {
   RunQuantGemmTestBatch(1, 8, 400);
   RunQuantGemmTestBatch(1, 512, 1024);
 }
+#endif  // #if !defined(__arm__)
 
 TEST(QuantGemmTest, GEMM) {
   RunQuantGemmTestBatch(2, 2, 40);

@@ -7,7 +7,6 @@
 #include <unordered_map>
 
 #include "core/optimizer/qdq_transformer/selectors_actions/qdq_selector_action_transformer.h"
-
 #include "core/mlas/inc/mlas.h"
 
 #include "core/optimizer/qdq_transformer/selectors_actions/qdq_actions.h"
@@ -69,17 +68,12 @@ void DropQDQNodesRules(SelectorActionRegistry& qdq_selector_action_registry) {
   // And cannot eliminate the QDQ for MaxPool if the scale is not positive, as a negative
   // scale will change the ordering of the elements between quantized & de-quantized values.
   std::vector<const char*> providers = {kCpuExecutionProvider, kDmlExecutionProvider};
-
-  // We don't drop the resample QDQ ops here for DML because we don't know yet whether it is allowed to be executed in DML.
-  // This will be done within DML during a graph pass if allowed, but otherwise we need to keep the dequantize op alive.
-  std::vector<const char*> cpu_ep = {kCpuExecutionProvider};
   std::unique_ptr<NodeSelector> selector_no_16bit = std::make_unique<QDQ::DropQDQNodesSelector>(false,
                                                                                                 false,
                                                                                                 true,
-                                                                                                cpu_ep);
+                                                                                                providers);
   qdq_selector_action_registry.RegisterSelectorAndAction(drop_action_no_int16_name,
-                                                         {{"DepthToSpace", {}},
-                                                          {"Resize", {}}},
+                                                         {{"Resize", {}}},
                                                          std::move(selector_no_16bit),
                                                          std::move(drop_action_no_int16));
 
@@ -93,7 +87,7 @@ void DropQDQNodesRules(SelectorActionRegistry& qdq_selector_action_registry) {
                                                          std::move(drop_action_no_int16_and_positive_scale));
 
   std::unique_ptr<NodeSelector> selector = std::make_unique<QDQ::DropQDQNodesSelector>(true, false, true, providers);
-  // SpaceToDepth not included because there are no integer implementations.
+  // DepthToSpace and SpaceToDepth not included because there are no integer implementations.
   // https://github.com/microsoft/onnxruntime/issues/21287
   qdq_selector_action_registry.RegisterSelectorAndAction(drop_action_name,
                                                          {{"Expand", {}},
@@ -146,34 +140,21 @@ void UnaryOpQDQRules(SelectorActionRegistry& qdq_selector_action_registry) {
   // 3 nodes. DQ, target, Q
   // Replace with internal QLinear version of operator. Delete all original nodes.
   const std::string action_name{"1DQ"};
-  const std::string cpu_action_name{"1DQ_CPU"};
   std::unique_ptr<Action> action = std::make_unique<QDQ::UnaryReplaceWithQLinear>(kMSDomain);
-  std::unique_ptr<Action> cpu_action = std::make_unique<QDQ::UnaryReplaceWithQLinear>(kMSDomain);
 
 #if !defined(ORT_MINIMAL_BUILD)
-  // Operators with DML QLinear kernel support (QLinearAveragePool, QLinearGlobalAveragePool, QLinearSigmoid)
-  std::vector<const char*> providers = {kCpuExecutionProvider, kDmlExecutionProvider};
+  std::vector<const char*> providers = {kCpuExecutionProvider};
   std::unique_ptr<NodeSelector> selector = std::make_unique<QDQ::UnarySelector>(providers);
   qdq_selector_action_registry.RegisterSelectorAndAction(action_name,
                                                          {{"AveragePool", {}},
+                                                          {"LeakyRelu", {}},
                                                           {"GlobalAveragePool", {}},
-                                                          {"Sigmoid", {}}},
+                                                          {"Sigmoid", {}},
+                                                          {"Softmax", {}}},
                                                          std::move(selector),
                                                          std::move(action));
-
-  // Operators without DML QLinear kernel support (CPU only).
-  // DML EP does not have QLinearLeakyRelu or QLinearSoftmax kernels.
-  // See https://github.com/microsoft/onnxruntime/issues/26531
-  std::vector<const char*> cpu_only_provider = {kCpuExecutionProvider};
-  std::unique_ptr<NodeSelector> cpu_selector = std::make_unique<QDQ::UnarySelector>(cpu_only_provider);
-  qdq_selector_action_registry.RegisterSelectorAndAction(cpu_action_name,
-                                                         {{"LeakyRelu", {}},
-                                                          {"Softmax", {}}},
-                                                         std::move(cpu_selector),
-                                                         std::move(cpu_action));
 #else
   qdq_selector_action_registry.RegisterAction(action_name, std::move(action));
-  qdq_selector_action_registry.RegisterAction(cpu_action_name, std::move(cpu_action));
 #endif
 }
 
@@ -251,7 +232,7 @@ void ConvQDQRules(SelectorActionRegistry& qdq_selector_action_registry, bool is_
 
 #if !defined(ORT_MINIMAL_BUILD)
   // TODO: Enable 16-bit types in selector when QLinearConv supports 16-bit.
-  std::vector<const char*> providers = {kCpuExecutionProvider, kDmlExecutionProvider, kAclExecutionProvider};
+  std::vector<const char*> providers = {kCpuExecutionProvider, kDmlExecutionProvider};
   std::unique_ptr<NodeSelector> selector = std::make_unique<QDQ::ConvSelector>(is_int8_allowed,
                                                                                false,
                                                                                false,
@@ -297,30 +278,22 @@ void MatMulQDQRules(SelectorActionRegistry& qdq_selector_action_registry, bool i
 void DQMatMulToMatMulNBitsRules(SelectorActionRegistry& qdq_selector_action_registry,
                                 int64_t qdq_matmulnbits_accuracy_level,
                                 concurrency::ThreadPool* intra_op_thread_pool,
-                                int64_t qdq_matmulnbits_block_size) {
+                                std::unordered_map<std::string, std::unique_ptr<Tensor>>* p_buffered_tensors) {
   // 2 nodes. DQ -> MatMul. DQ is the second input to MatMul.
-  // DQ's weight is 2/4/8-bit int (int2/uint2, int4/uint4, int8/uint8). DQ's scale is float/float16.
+  // DQ's weight is int4/uint4. DQ's scale is float/float16.
   // DQ is block-quantized along axis 0, with block_size >= 16 and as 2's power.
-  // Also supports per-tensor and per-channel (axis=1) quantized DQ weights by expanding
-  // scales/zero-points to blockwise format using qdq_matmulnbits_block_size.
   const std::string action_name{"DQMatMulToMatMulNBits"};
 
   std::unique_ptr<Action> action =
       std::make_unique<QDQ::DQMatMulToMatMulNBitsAction>(qdq_matmulnbits_accuracy_level,
                                                          intra_op_thread_pool,
-                                                         qdq_matmulnbits_block_size);
+                                                         p_buffered_tensors);
 
 #if !defined(ORT_MINIMAL_BUILD)
-  // Include "" (empty string) to match nodes not yet assigned to an EP.
-  // For FP16 models on CPU EP, FP16 MatMul nodes are not claimed during partitioning
-  // (no FP16 MatMul kernel on CPU), leaving their EP unassigned. The DQ->MatMul fusion
-  // should still apply; the action assigns kCpuExecutionProvider to the resulting
-  // MatMulNBits node (which has both float and float16 CPU kernels).
-  std::vector<const char*> providers = {kCpuExecutionProvider, kCudaExecutionProvider, kDmlExecutionProvider, ""};
+  std::vector<const char*> providers = {kCpuExecutionProvider, kCudaExecutionProvider, kDmlExecutionProvider};
   std::unique_ptr<NodeSelector> selector = std::make_unique<QDQ::DQMatMulToMatMulNBitsSelector>(providers);
   qdq_selector_action_registry.RegisterSelectorAndAction(action_name,
-                                                         {{"MatMul", {}},
-                                                          {"Gemm", {}}},
+                                                         {{"MatMul", {}}},
                                                          std::move(selector),
                                                          std::move(action));
 
@@ -376,7 +349,7 @@ SelectorActionRegistry CreateSelectorActionRegistry(
     bool is_int8_allowed,
     int64_t qdq_matmulnbits_accuracy_level,
     concurrency::ThreadPool* intra_op_thread_pool,
-    int64_t qdq_matmulnbits_block_size) {
+    std::unordered_map<std::string, std::unique_ptr<Tensor>>* p_buffered_tensors) {
   SelectorActionRegistry qdq_selector_action_registry;
   SplitQDQRules(qdq_selector_action_registry);
   DropQDQNodesRules(qdq_selector_action_registry);
@@ -391,7 +364,7 @@ SelectorActionRegistry CreateSelectorActionRegistry(
   DQMatMulToMatMulNBitsRules(qdq_selector_action_registry,
                              qdq_matmulnbits_accuracy_level,
                              intra_op_thread_pool,
-                             qdq_matmulnbits_block_size);
+                             p_buffered_tensors);
 
   return qdq_selector_action_registry;
 }
@@ -403,18 +376,15 @@ QDQSelectorActionTransformer::QDQSelectorActionTransformer(
     const SatApplyContextVariant& apply_context,
     int64_t qdq_matmulnbits_accuracy_level,
     concurrency::ThreadPool* intra_op_thread_pool,
-    int64_t qdq_matmulnbits_block_size)
+    std::unordered_map<std::string, std::unique_ptr<Tensor>>* p_buffered_tensors)
     : SelectorActionTransformer{
           "QDQSelectorActionTransformer",
           CreateSelectorActionRegistry(is_int8_allowed, qdq_matmulnbits_accuracy_level,
-                                       intra_op_thread_pool,
-                                       qdq_matmulnbits_block_size),
+                                       intra_op_thread_pool, p_buffered_tensors),
           apply_context,
           // this transformer is compatible with CPU, DML, ACL and CUDA EP.
           // There is further EP control on the rule level.
-          // Also accept nodes with empty EP (unassigned) so that individual selectors
-          // that include "" in their compatible providers can match unassigned nodes.
-          {kCpuExecutionProvider, kDmlExecutionProvider, kAclExecutionProvider, kCudaExecutionProvider, ""}} {
+          {kCpuExecutionProvider, kDmlExecutionProvider, kAclExecutionProvider, kCudaExecutionProvider}} {
 }
 
 }  // namespace onnxruntime

@@ -1,0 +1,46 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all optimize=-lto
+export DEB_CFLAGS_MAINT_STRIP = -O3
+export DEB_CXXFLAGS_MAINT_STRIP = -O3
+
+SOVERSION=1.20.1
+
+PATH_LIB=usr/lib/${DEB_HOST_MULTIARCH}
+
+%:
+	dh $@ --buildsystem=cmake+ninja --sourcedirectory=cmake --builddirectory=.
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+		-DCMAKE_BUILD_TYPE=RelWithDebInfo \
+		-DCMAKE_INSTALL_INCLUDEDIR=include \
+		-Deigen_SOURCE_PATH=/usr/include/eigen3 \
+		-Donnxruntime_BUILD_BENCHMARKS=OFF \
+		-Donnxruntime_BUILD_SHARED_LIB=ON \
+		-Donnxruntime_BUILD_UNIT_TESTS=OFF \
+		-Donnxruntime_DISABLE_ABSEIL=ON \
+		-Donnxruntime_ENABLE_CPUINFO=ON \
+		-Donnxruntime_ENABLE_PYTHON=OFF \
+		-Donnxruntime_ONNX_TEST_DATA_DIR=/usr/share/libonnx-testdata/data \
+		-Donnxruntime_USE_FULL_PROTOBUF=ON \
+		-Donnxruntime_USE_PREINSTALLED_EIGEN=ON \
+		-Donnxruntime_DISABLE_CONTRIB_OPS=OFF \
+		-Donnxruntime_USE_PHYNPU=OFF \
+		--compile-no-warning-as-error \
+        -DCMAKE_CXX_FLAGS="-Wno-error=unused-result" \
+		$(NULL)
+
+override_dh_auto_install:
+	dh_auto_install
+
+override_dh_auto_test:
+	# Do NOT run tests, they depend on *.onnx dataset with unclear license
+	# See https://github.com/microsoft/onnxruntime/issues/8963
+
+override_dh_auto_clean:
+
+override_dh_makeshlibs:
+	dh_makeshlibs \
+		--exclude=/usr/lib/$(DEB_HOST_MULTIARCH)/libonnxruntime_providers_ \
+		-- -c4

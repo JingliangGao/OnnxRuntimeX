@@ -39,7 +39,7 @@ class DataTaskRequestContext {
   /// <param name="task_id">this task id</param>
   /// <returns>execution result and elapsed time</returns>
   static std::pair<EXECUTE_RESULT, TIME_SPEC> Run(const ITestCase& c, ::Ort::Session& session,
-                                                  OrtAllocator* allocator, size_t task_id, bool inference_mode = false);
+                                                  OrtAllocator* allocator, size_t task_id);
 
   /// <summary>
   /// Schedules a data task to run on a threadpool. The function
@@ -53,7 +53,7 @@ class DataTaskRequestContext {
   /// <param name="task_id">this taks id</param>
   static void Request(const Callback& cb, concurrency::ThreadPool* tp,
                       const ITestCase& c, ::Ort::Session& session,
-                      OrtAllocator* allocator, size_t task_id, bool inference_mode = false);
+                      OrtAllocator* allocator, size_t task_id);
 
   ORT_DISALLOW_COPY_AND_ASSIGNMENT(DataTaskRequestContext);
 
@@ -69,13 +69,12 @@ class DataTaskRequestContext {
 
   DataTaskRequestContext(const Callback& cb,
                          const ITestCase& test_case, ::Ort::Session& session,
-                         OrtAllocator* allocator, size_t task_id, bool inference_mode = false)
+                         OrtAllocator* allocator, size_t task_id)
       : cb_(cb),
         test_case_(test_case),
         session_(session),
         default_allocator_(allocator),
-        task_id_(task_id),
-        inference_mode_(inference_mode) {
+        task_id_(task_id) {
     SetTimeSpecToZero(&spent_time_);
   }
 
@@ -89,7 +88,6 @@ class DataTaskRequestContext {
   OrtAllocator* default_allocator_;
   size_t task_id_;
   TIME_SPEC spent_time_;
-  bool inference_mode_;
 };
 
 }  // namespace test

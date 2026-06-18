@@ -12,7 +12,7 @@
 
 #include "test/providers/provider_test_utils.h"
 #include "test/util/include/default_providers.h"
-#include "test/unittest_util/framework_test_utils.h"
+#include "test/framework/test_utils.h"
 
 using namespace ONNX_NAMESPACE;
 
@@ -360,6 +360,8 @@ void RunTest(int64_t max_iterations,
     std::vector<std::unique_ptr<IExecutionProvider>> execution_providers;
 #if defined(USE_CUDA)
     execution_providers.push_back(DefaultCudaExecutionProvider());
+#elif defined(USE_ROCM)
+    execution_providers.push_back(DefaultRocmExecutionProvider());
 #endif
     execution_providers.push_back(DefaultCpuExecutionProvider());
 
@@ -574,10 +576,11 @@ TEST(Loop, InfiniteLoopTermination) {
   test.Run(OpTester::ExpectResult::kExpectFailure, "Exiting due to terminate flag being set to true",
            {kTensorrtExecutionProvider, kOpenVINOExecutionProvider}, &session_run_options);  // Disable TensorRT on unsupported data type BOOL
 
-  // done with the thread
-  terminator_thread.join();
   // call get to propagate any exception
   terminator_result.get();
+
+  // done with the thread
+  terminator_thread.join();
 }
 
 // Add basic test to trigger types override logic in Graph::InferAndVerifySubgraphTypes as well as
@@ -686,7 +689,7 @@ TEST(Loop, SubgraphTypeOverride) {
   Graph::ResolveOptions options;
   options.override_types = true;
   test.Run(OpTester::ExpectResult::kExpectSuccess, "",
-           {kTensorrtExecutionProvider, kOpenVINOExecutionProvider}, &session_run_options, nullptr,
+           {kTensorrtExecutionProvider}, &session_run_options, nullptr,
            ExecutionMode::ORT_SEQUENTIAL, options);
 }
 
@@ -826,8 +829,7 @@ TEST(Loop, Opset11WithNoVariadicInputsAndOutputs) {
   test.AddOutput<float>("loop_scan_out", {1}, {1.0f});
 
   // Disable TensorRT on unsupported data type BOOL
-  // Disable OpenVino for floating nodes
-  test.Run(OpTester::ExpectResult::kExpectSuccess, "", {kTensorrtExecutionProvider, kOpenVINOExecutionProvider});
+  test.Run(OpTester::ExpectResult::kExpectSuccess, "", {kTensorrtExecutionProvider});
 }
 
 // Test a combination of things:
@@ -1037,12 +1039,11 @@ TEST(Loop, IterationCountAsOutput) {
   test.AddOutput<int64_t>("loop_var_0_final", {3, 1}, {0, 1, 2});
 
   // Disable TensorRT on unsupported data type BOOL
-  // Disable OV EP due to ONNX partition create new domain and OV FE can't handle it
-  test.Run(OpTester::ExpectResult::kExpectSuccess, "", {kTensorrtExecutionProvider, kOpenVINOExecutionProvider});
+  test.Run(OpTester::ExpectResult::kExpectSuccess, "", {kTensorrtExecutionProvider});
 }
 
-#if defined(USE_CUDA)
-// test that when part of the subgraph run on CUDA it executes successfully
+#if defined(USE_CUDA) || defined(USE_ROCM)
+// test that when part of the subgraph run on CUDA/ROCm it executes successfully
 TEST(Loop, MixedExecutionProviders) {
   RunOptions options{};
   options.mixed_execution_providers = true;
@@ -1162,7 +1163,7 @@ TEST(Loop, SequenceAsLoopCarriedDependency) {
   test.AddSeqOutput("loop_var_0_final", seq_output);
 
   // Disable TensorRT on unsupported data type BOOL
-  test.Run(OpTester::ExpectResult::kExpectSuccess, "", {kTensorrtExecutionProvider, kOpenVINOExecutionProvider});
+  test.Run(OpTester::ExpectResult::kExpectSuccess, "", {kTensorrtExecutionProvider});
 }
 
 #if !defined(DISABLE_OPTIONAL_TYPE)

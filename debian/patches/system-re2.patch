@@ -1,0 +1,32 @@
+Description: Use system re2 lib (libre2-dev)
+Forwarded: not-needed
+Author: Dylan Aïssi <daissi@debian.org>
+
+--- a/cmake/external/onnxruntime_external_deps.cmake
++++ b/cmake/external/onnxruntime_external_deps.cmake
+@@ -383,6 +383,25 @@
+     PATCH_COMMAND ${ONNXRUNTIME_FLATBUFFERS_PATCH_COMMAND}
+     FIND_PACKAGE_ARGS 23.5.9 NAMES Flatbuffers flatbuffers FlatBuffers
+ )
++find_package(PkgConfig REQUIRED)
++pkg_check_modules(RE2 re2)
++if(RE2_FOUND)
++  set(re2_FOUND "${RE2_FOUND}")
++  add_library(re2::re2 INTERFACE IMPORTED)
++  if(RE2_INCLUDE_DIRS)
++    set_property(TARGET re2::re2 PROPERTY
++                 INTERFACE_INCLUDE_DIRECTORIES "${RE2_INCLUDE_DIRS}")
++  endif()
++  if(RE2_CFLAGS_OTHER)
++    set_property(TARGET re2::re2 PROPERTY
++                 INTERFACE_COMPILE_OPTIONS "${RE2_CFLAGS_OTHER}")
++  endif()
++  if(RE2_LDFLAGS)
++    set_property(TARGET re2::re2 PROPERTY
++                 INTERFACE_LINK_LIBRARIES "${RE2_LDFLAGS}")
++  endif()
++  message(STATUS "Found RE2 via pkg-config.")
++endif()
+ 
+ onnxruntime_fetchcontent_makeavailable(flatbuffers)
+ if(NOT flatbuffers_FOUND)

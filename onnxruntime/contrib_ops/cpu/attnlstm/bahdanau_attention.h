@@ -4,7 +4,6 @@
 #pragma once
 
 #include "core/framework/allocator.h"
-#include "core/mlas/inc/mlas.h"
 #include "core/providers/cpu/rnn/rnn_helpers.h"
 
 #include "attention_mechanism.h"
@@ -24,8 +23,7 @@ class BahdanauAttention : public IAttentionMechanism<T> {
       int memory_depth,
       int query_depth,
       int attn_depth,
-      bool normalize, concurrency::ThreadPool* threadpool,
-      const MLAS_BACKEND_KERNEL_SELECTOR_CONFIG* mlas_backend_kernel_selector_config);
+      bool normalize, concurrency::ThreadPool* threadpool);
 
   void SetWeights(
       const gsl::span<const T>& attn_weights,
@@ -80,8 +78,6 @@ class BahdanauAttention : public IAttentionMechanism<T> {
 
   bool normalize_;
   concurrency::ThreadPool* ttp_;
-
-  const MLAS_BACKEND_KERNEL_SELECTOR_CONFIG* mlas_backend_kernel_selector_config_;
 };
 
 }  // namespace contrib

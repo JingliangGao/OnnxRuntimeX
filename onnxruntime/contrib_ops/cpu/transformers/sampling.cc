@@ -20,7 +20,6 @@
 using namespace ONNX_NAMESPACE;
 using namespace onnxruntime::common;
 
-#if !defined(DISABLE_GENERATION_OPS)
 namespace onnxruntime {
 namespace contrib {
 
@@ -179,4 +178,3 @@ Status Sampling::Compute(OpKernelContext* ctx) const {
 }  // namespace transformers
 }  // namespace contrib
 }  // namespace onnxruntime
-#endif  // !defined(DISABLE_GENERATION_OPS)

@@ -80,7 +80,7 @@ OrtValue* OpKernelContext::OutputMLValue(int index, const TensorShape& shape) {
 
   OrtValue* p_ml_value = nullptr;
   Status status = execution_frame_->GetOrCreateNodeOutputMLValue(index, GetOutputArgIndex(index), &shape, p_ml_value, kernel_->Node());
-  ORT_THROW_IF_ERROR(status);
+  ORT_ENFORCE(status.IsOK(), status.ErrorMessage());
   return p_ml_value;
 }
 
@@ -126,14 +126,34 @@ OrtValue* OpKernelContext::GetOrCreateOutputMLValue(int index) {
   auto output_arg_index = GetOutputArgIndex(index);
   OrtValue* value = nullptr;
   auto status = execution_frame_->GetOrCreateNodeOutputMLValue(index, output_arg_index, nullptr, value, kernel_->Node());
-  ORT_THROW_IF_ERROR(status);
+  ORT_ENFORCE(status.IsOK(), status.ErrorMessage());
   return value;
 }
 
-int OpKernelContext::GetOrtValueIndexForOutput(int output_index) const {
-  int output_arg_index = GetOutputArgIndex(output_index);
-  return execution_frame_->GetNodeIdxToMLValueIdx(output_arg_index);
+#ifdef USE_PHYNPU
+const Status OpKernelContext::SetPhyOutputMLValue(int index, const OrtValue* ort_value, int *out_arg_index) const {
+  if (index < 0 || index >= OutputCount()) {
+     return Status(common::ONNXRUNTIME, common::FAIL,
+                   "Index out of range. " + std::to_string(index) +
+                   " was specified, but " + "range is [0, " + std::to_string(OutputCount()) + ")");
+  }
+
+  auto output_arg_index = GetOutputArgIndex(index);
+  auto result = execution_frame_->SetPhyOutputMLValue(output_arg_index, ort_value, out_arg_index);
+  return result;
 }
+
+const Status OpKernelContext::SetPhyInputMLValue(int index, const OrtValue* ort_value, int *in_arg_index) const {
+  if (index < 0 || index >= InputCount()) {
+     return Status(common::ONNXRUNTIME, common::FAIL,
+                   "Index out of range. " + std::to_string(index) +
+                   " was specified, but " + "range is [0, " + std::to_string(InputCount()) + ")");
+  }
+
+  auto output_arg_index = GetInputArgIndex(index);
+  return execution_frame_->SetPhyInputMLValue(output_arg_index, ort_value, in_arg_index);
+}
+#endif
 
 int OpKernelContext::GetInputArgIndex(int index) const {
   return node_input_start_index_ + index;

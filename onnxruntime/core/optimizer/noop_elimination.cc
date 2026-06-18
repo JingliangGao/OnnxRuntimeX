@@ -58,13 +58,9 @@ bool NoopElimination::SatisfyCondition(const Graph& graph, const Node& node, con
     return false;
   }
 
-  // A zero-element initializer (shape with a 0 dim) is not a proven identity
-  // value for Add/Sub/Mul/Div: the only graphs in which the unfused op is
-  // equivalent to a no-op are those where the other input is also empty at
-  // runtime, which we cannot generally prove here. Removing the node would
-  // broaden the model's accepted shapes. Skip elimination in that case.
+  // handle edge case where the total size of the initializer is 0
   if (tensor_size == 0) {
-    return false;
+    return true;
   }
 
   if (op_type == "Add" ||
@@ -72,7 +68,7 @@ bool NoopElimination::SatisfyCondition(const Graph& graph, const Node& node, con
       op_type == "Mul" ||
       op_type == "Div") {
     int32_t data_type = initializer->data_type();
-    Initializer add_init(graph, *initializer, graph.ModelPath());
+    Initializer add_init(*initializer, graph.ModelPath());
 
     float value = 0.0f;
     switch (data_type) {

@@ -12,7 +12,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/util/math.h"
 #include "core/platform/env.h"
-#include "test/unittest_util/framework_test_utils.h"
+#include "test/framework/test_utils.h"
 #include "test/capturing_sink.h"
 #include "test/test_environment.h"
 #include "asserts.h"
@@ -27,7 +27,6 @@ namespace test {
 TEST(OptimizerTest, Basic) {
   Model model("OptimizerBasic", false, ModelMetaData(), PathString(), IOnnxRuntimeOpSchemaRegistryList(),
               {{kOnnxDomain, 12}}, {}, DefaultLoggingManager().DefaultLogger());
-  const logging::Logger& logger = DefaultLoggingManager().DefaultLogger();
   auto& graph = model.MainGraph();
 
   constexpr int tensor_dim = 10;
@@ -67,21 +66,22 @@ TEST(OptimizerTest, Basic) {
 
   auto cpu_execution_provider = std::make_unique<CPUExecutionProvider>(CPUExecutionProviderInfo());
 #if !defined(DISABLE_SPARSE_TENSORS)
-  OptimizerExecutionFrame::Info info(
-      nodes, initialized_tensor_set, graph.ModelPath(), *cpu_execution_provider.get(),
-      [&graph](const std::string& name) -> bool {
-        return graph.IsSparseInitializer(name);
-      },
-      logger);
+  OptimizerExecutionFrame::Info info(nodes, initialized_tensor_set,
+                                     graph.ModelPath(),
+                                     *cpu_execution_provider.get(),
+                                     [&graph](const std::string& name) -> bool {
+                                       return graph.IsSparseInitializer(name);
+                                     });
 #else
-  OptimizerExecutionFrame::Info info(
-      nodes, initialized_tensor_set, graph.ModelPath(), *cpu_execution_provider.get(),
-      [](std::string const&) { return false; },
-      logger);
+  OptimizerExecutionFrame::Info info(nodes, initialized_tensor_set,
+                                     graph.ModelPath(),
+                                     *cpu_execution_provider.get(),
+                                     [](std::string const&) { return false; });
 #endif  //! defined(DISABLE_SPARSE_TENSORS)
 
   std::vector<int> fetch_mlvalue_idxs{info.GetMLValueIndex("out")};
   OptimizerExecutionFrame frame(info, fetch_mlvalue_idxs);
+  const logging::Logger& logger = DefaultLoggingManager().DefaultLogger();
 
   const ConfigOptions empty_config_options;
 

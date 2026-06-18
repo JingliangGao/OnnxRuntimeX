@@ -23,27 +23,22 @@ std::string BarrierStep::ToString() const {
   return MakeString("Barrier - BarrierId: ", barrier_id_, ", Count: ", 2);
 }
 
-WaitOnEPStep::WaitOnEPStep(WaitNotificationFn handle, NotificationIndex idx, NodeIndex node_index)
-    : SequentialExecutionPlan::ExecutionStep(node_index),
-      wait_fn_(handle),
-      notification_idx_(idx) {
-  ORT_ENFORCE(wait_fn_, "WaitNoficationFn must be provided.");
-}
+WaitOnEPStep::WaitOnEPStep(WaitNotificationFn handle,
+                           NotificationIndex idx, NodeIndex node_index) : SequentialExecutionPlan::ExecutionStep(node_index),
+                                                                          wait_handle_(handle),
+                                                                          notification_idx_(idx) {}
 
 Status WaitOnEPStep::Execute(StreamExecutionContext& ctx,
                              size_t stream_idx,
                              SessionScope& /*session_scope*/,
                              const bool& /*terminate_flag*/,
                              bool& continue_flag) {
-  auto* stream = ctx.GetDeviceStream(stream_idx);
-  auto& notification = *ctx.GetNotification(notification_idx_);
-  wait_fn_(stream, notification);
-
-  // update the stream's clock status
-  if (stream != nullptr) {
-    stream->UpdateWithAwaitedNotification(notification);
+  ORT_ENFORCE(wait_handle_, "WaitOnEPStep.wait_handle is null");
+  wait_handle_(*ctx.GetDeviceStream(stream_idx), *ctx.GetNotification(notification_idx_));
+  // update streams clock status
+  if (ctx.GetDeviceStream(stream_idx)) {
+    ctx.GetDeviceStream(stream_idx)->UpdateStreamClock(ctx.GetNotification(notification_idx_)->GetStreamSyncTable());
   }
-
   LOGS(ctx.GetLogger(), VERBOSE) << "stream " << stream_idx << " wait on Notification with id: " << notification_idx_;
   continue_flag = true;
   return Status::OK();

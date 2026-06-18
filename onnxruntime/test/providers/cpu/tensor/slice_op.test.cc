@@ -5,7 +5,6 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 #include "test/util/include/default_providers.h"
-#include "test/common/tensor_op_test_utils.h"
 
 namespace onnxruntime {
 namespace test {
@@ -54,7 +53,6 @@ void RunSliceTest(const std::vector<int64_t>& input_dims,
 
   if (onnx_shape_disagreement) {
     excluded_providers.insert(kCoreMLExecutionProvider);
-    excluded_providers.insert(kOpenVINOExecutionProvider);
   }
 
   if (!v10_only) {
@@ -266,6 +264,22 @@ TEST(SliceTest, Slice3D) {
 }
 
 template <typename T>
+static std::vector<T> GetTypedArray(std::vector<float> inputs, [[maybe_unused]] T v = T(0.f)) {
+  std::vector<T> inputs_T(inputs.size());
+  if constexpr (std::is_same<T, float>::value) {
+    return inputs;
+  } else if constexpr (std::is_integral_v<T>) {
+    for (size_t i = 0; i < inputs.size(); i++) {
+      inputs_T[i] = static_cast<T>(inputs[i]);
+    }
+    return inputs_T;
+  } else {
+    ConvertFloatToMLFloat16(inputs.data(), inputs_T.data(), inputs.size());
+    return inputs_T;
+  }
+}
+
+template <typename T>
 static void TestSlice1DIntData() {
   // static_assert(std::is_integral_v<TInt>);
   RunSliceTest<T>({6},
@@ -353,9 +367,6 @@ TEST(SliceTest, Slice1D_WithNegativeSteps_EndOutOfBounds_1) {
 }
 
 TEST(SliceTest, Slice1D_WithNegativeSteps_EndOutOfBounds_2) {
-  if (DefaultWebGpuExecutionProvider().get() != nullptr) {
-    GTEST_SKIP() << "Not covered by WebGPU test suite";
-  }
   RunSliceTest<float>({6},
                       {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f},
                       {0},

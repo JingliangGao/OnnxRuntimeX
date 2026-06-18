@@ -91,8 +91,9 @@ TEST(UpsampleOpTest, NhwcUpsampleOpNearestTest) {
   test.AddOutput<float>("Y", {N, (int64_t)(H * scales[1]), (int64_t)(W * scales[2]), C}, Y);
   // CUDA: result mismatch due to not implementing NHWC support
   // TensorRT: results mismatch
+  // ROCm: results mismatch
   test.Run(OpTester::ExpectResult::kExpectSuccess, "",
-           {kCudaExecutionProvider, kTensorrtExecutionProvider});
+           {kCudaExecutionProvider, kTensorrtExecutionProvider, kRocmExecutionProvider});
 }
 
 TEST(UpsampleOpTest, UpsampleOpNearestTest_int32) {
@@ -173,8 +174,10 @@ TEST(UpsampleOpTest, NhwcUpsampleOpNearestTest_int32) {
 
   test.AddOutput<int32_t>("Y", {N, (int64_t)(H * scales[1]), (int64_t)(W * scales[2]), C}, Y);
   // CUDA: result mismatch due to not implementing NHWC support
+  // TensorRT: results mismatch
+  // ROCm: results mismatch
   test.Run(OpTester::ExpectResult::kExpectSuccess, "",
-           {kCudaExecutionProvider, kTensorrtExecutionProvider});
+           {kCudaExecutionProvider, kTensorrtExecutionProvider, kRocmExecutionProvider});
 }
 
 TEST(UpsampleOpTest, UpsampleOpNearestTest_uint8) {
@@ -256,8 +259,9 @@ TEST(UpsampleOpTest, NhwcUpsampleOpNearestTest_uint8) {
   test.AddOutput<uint8_t>("Y", {N, (int64_t)(H * scales[1]), (int64_t)(W * scales[2]), C}, Y);
   // CUDA: result mismatch due to not implementing NHWC support
   // TensorRT: results mismatch
+  // ROCm: results mismatch
   test.Run(OpTester::ExpectResult::kExpectSuccess, "",
-           {kCudaExecutionProvider, kTensorrtExecutionProvider});
+           {kCudaExecutionProvider, kTensorrtExecutionProvider, kRocmExecutionProvider});
 }
 
 TEST(UpsampleOpTest, UpsampleOpNearest2XTest) {
@@ -331,8 +335,9 @@ TEST(UpsampleOpTest, NhwcUpsampleOpNearest2XTest) {
   test.AddOutput<float>("Y", {N, (int64_t)(H * scales[1]), (int64_t)(W * scales[2]), C}, Y);
   // CUDA: result mismatch due to not implementing NHWC support
   // TensorRT: results mismatch
+  // ROCm: results mismatch
   test.Run(OpTester::ExpectResult::kExpectSuccess, "",
-           {kCudaExecutionProvider, kTensorrtExecutionProvider});
+           {kCudaExecutionProvider, kTensorrtExecutionProvider, kRocmExecutionProvider});
 }
 
 TEST(UpsampleOpTest, UpsampleOpNearest222XTest) {
@@ -436,8 +441,9 @@ TEST(UpsampleOpTest, NhwcUpsampleOpNearest222XTest) {
   test.AddOutput<float>("Y", {(int64_t)(N * scales[0]), (int64_t)(H * scales[1]), (int64_t)(W * scales[2]), C}, Y);
   // CUDA: result mismatch due to not implementing NHWC support
   // TensorRT: results mismatch
+  // ROCm: results mismatch
   test.Run(OpTester::ExpectResult::kExpectSuccess, "",
-           {kCudaExecutionProvider, kTensorrtExecutionProvider});
+           {kCudaExecutionProvider, kTensorrtExecutionProvider, kRocmExecutionProvider});
 }
 
 TEST(UpsampleOpTest, UpsampleOpNearest15XTest) {
@@ -507,8 +513,9 @@ TEST(UpsampleOpTest, NhwcUpsampleOpNearest15XTest) {
   test.AddOutput<float>("Y", {N, (int64_t)(H * scales[1]), (int64_t)(W * scales[2]), C}, Y);
   // CUDA: result mismatch due to not implementing NHWC support
   // TensorRT: results mismatch
+  // ROCm: results mismatch
   test.Run(OpTester::ExpectResult::kExpectSuccess, "",
-           {kCudaExecutionProvider, kTensorrtExecutionProvider});
+           {kCudaExecutionProvider, kTensorrtExecutionProvider, kRocmExecutionProvider});
 }
 
 TEST(UpsampleOpTest, UpsampleOpNearestTest_NoScale) {
@@ -608,8 +615,9 @@ TEST(UpsampleOpTest, NhwcUpsampleOpNearest2XTest_int32) {
   test.AddOutput<int32_t>("Y", {N, (int64_t)(H * scales[1]), (int64_t)(W * scales[2]), C}, Y);
   // CUDA: result mismatch due to not implementing NHWC support
   // TensorRT: results mismatch
+  // ROCm: results mismatch
   test.Run(OpTester::ExpectResult::kExpectSuccess, "",
-           {kCudaExecutionProvider, kTensorrtExecutionProvider});
+           {kCudaExecutionProvider, kTensorrtExecutionProvider, kRocmExecutionProvider});
 }
 
 TEST(UpsampleOpTest, UpsampleOp4DBilinearTest) {
@@ -683,8 +691,9 @@ TEST(UpsampleOpTest, NhwcUpsampleOp4D1CBilinearTest) {
   test.AddOutput<float>("Y", {N, (int64_t)(H * scales[1]), (int64_t)(W * scales[2]), C}, Y);
   // CUDA: result mismatch due to not implementing NHWC support
   // TensorRT: results mismatch
+  // ROCm: results mismatch
   test.Run(OpTester::ExpectResult::kExpectSuccess, "",
-           {kCudaExecutionProvider, kCudaNHWCExecutionProvider, kTensorrtExecutionProvider});
+           {kCudaExecutionProvider, kCudaNHWCExecutionProvider, kTensorrtExecutionProvider, kRocmExecutionProvider});
 }
 
 TEST(UpsampleOpTest, NhwcUpsampleOp4DBilinearTest) {
@@ -756,8 +765,9 @@ TEST(UpsampleOpTest, NhwcUpsampleOp4DBilinearTest) {
   test.AddOutput<float>("Y", {N, (int64_t)(H * scales[1]), (int64_t)(W * scales[2]), C}, Y);
   // CUDA: result mismatch due to not implementing NHWC support
   // TensorRT: results mismatch
+  // ROCm: results mismatch
   test.Run(OpTester::ExpectResult::kExpectSuccess, "",
-           {kCudaExecutionProvider, kCudaNHWCExecutionProvider, kTensorrtExecutionProvider});
+           {kCudaExecutionProvider, kCudaNHWCExecutionProvider, kTensorrtExecutionProvider, kRocmExecutionProvider});
 }
 
 TEST(UpsampleOpTest, UpsampleOp2DBilinearTest) {
@@ -875,8 +885,9 @@ TEST(UpsampleOpTest, NhwcUpsampleOp4DBilinearTest_int32) {
   test.AddOutput<int32_t>("Y", {N, (int64_t)(H * scales[1]), (int64_t)(W * scales[2]), C}, Y);
   // CUDA: result mismatch due to not implementing NHWC support
   // TensorRT: results mismatch
+  // ROCm: results mismatch
   test.Run(OpTester::ExpectResult::kExpectSuccess, "",
-           {kCudaExecutionProvider, kCudaNHWCExecutionProvider, kTensorrtExecutionProvider});
+           {kCudaExecutionProvider, kCudaNHWCExecutionProvider, kTensorrtExecutionProvider, kRocmExecutionProvider});
 }
 
 TEST(UpsampleOpTest, UpsampleOpNearestTest_1D) {
@@ -974,8 +985,9 @@ TEST(UpsampleOpTest, NhwcUpsampleOpNearest2XTest_opset9) {
   test.AddOutput<int32_t>("Y", {N, (int64_t)(H * scales[1]), (int64_t)(W * scales[2]), C}, Y);
   // CUDA: result mismatch due to not implementing NHWC support
   // TensorRT: results mismatch
+  // ROCm: results mismatch
   test.Run(OpTester::ExpectResult::kExpectSuccess, "",
-           {kCudaExecutionProvider, kTensorrtExecutionProvider});
+           {kCudaExecutionProvider, kTensorrtExecutionProvider, kRocmExecutionProvider});
 }
 }  // namespace test
 }  // namespace onnxruntime

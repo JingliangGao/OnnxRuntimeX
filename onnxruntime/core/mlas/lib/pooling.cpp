@@ -1533,7 +1533,7 @@ Return Value:
             c -= 8;
         }
 
-#elif defined(MLAS_TARGET_POWER) || defined(MLAS_TARGET_S390X)
+#elif defined(MLAS_TARGET_POWER)
 
         while (c >= 32) {
             auto MaximumVector0 = vec_splats(std::numeric_limits<T8Bits>::lowest());

@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+
 #include "core/optimizer/selectors_actions/selector_action_transformer.h"
 
 #include <algorithm>
@@ -147,7 +149,7 @@ static Status MatchAndProcess(
       RuntimeOptimizationRecord::ProducedOpIdVector produced_op_ids{};
       produced_op_ids.reserve(action_saved_state.produced_node_op_schemas.size());
 
-      for (const auto& op_schema : action_saved_state.produced_node_op_schemas) {
+      for (const auto op_schema : action_saved_state.produced_node_op_schemas) {
         produced_op_ids.push_back(utils::MakeOpId(*op_schema));
         if (save_context->record_produced_node_op_schema) {
           status = save_context->record_produced_node_op_schema(*op_schema);

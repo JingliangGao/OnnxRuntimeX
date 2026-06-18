@@ -9,7 +9,8 @@ file(GLOB_RECURSE onnxruntime_util_srcs CONFIGURE_DEPENDS
 source_group(TREE ${ONNXRUNTIME_ROOT}/core FILES ${onnxruntime_util_srcs})
 
 onnxruntime_add_static_library(onnxruntime_util ${onnxruntime_util_srcs})
-onnxruntime_add_include_to_target(onnxruntime_util onnxruntime_common onnx onnx_proto ${PROTOBUF_LIB} Boost::mp11 Eigen3::Eigen)
+target_include_directories(onnxruntime_util PRIVATE ${ONNXRUNTIME_ROOT} PUBLIC ${eigen_INCLUDE_DIRS})
+onnxruntime_add_include_to_target(onnxruntime_util onnxruntime_common onnx onnx_proto ${PROTOBUF_LIB} Boost::boost)
 if(UNIX)
     target_compile_options(onnxruntime_util PUBLIC "-Wno-error=comment")
 endif()
@@ -21,7 +22,7 @@ if (WIN32)
 endif()
 
 if (NOT onnxruntime_BUILD_SHARED_LIB)
-    install(TARGETS onnxruntime_util EXPORT ${PROJECT_NAME}Targets
+    install(TARGETS onnxruntime_util
             ARCHIVE   DESTINATION ${CMAKE_INSTALL_LIBDIR}
             LIBRARY   DESTINATION ${CMAKE_INSTALL_LIBDIR}
             RUNTIME   DESTINATION ${CMAKE_INSTALL_BINDIR}

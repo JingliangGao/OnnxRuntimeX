@@ -74,11 +74,6 @@ static Status SetGraphOptimizationLevel(SessionOptions& session_options,
       session_options.graph_optimization_level = TransformerLevel::Level2;
       return Status::OK();
 
-    case ORT_ENABLE_LAYOUT:
-      LOGS(logger, INFO) << "Setting graph_optimization_level to ORT_ENABLE_LAYOUT";
-      session_options.graph_optimization_level = TransformerLevel::Level3;
-      return Status::OK();
-
     case ORT_ENABLE_ALL:
       LOGS(logger, INFO) << "Setting graph_optimization_level to ORT_ENABLE_ALL";
       session_options.graph_optimization_level = TransformerLevel::MaxLevel;
@@ -241,8 +236,7 @@ Status JsonConfigParser::ParseRunOptionsFromModelProto(RunOptions& /*run_options
 
 Status ParseTuningResultsFromModelMetadata(const onnxruntime::ModelMetadata& metadata,
                                            std::vector<TuningResults>& results,
-                                           bool& key_found,
-                                           const logging::Logger& logger) {
+                                           bool& key_found) {
   results.clear();
   key_found = false;
   auto it = metadata.custom_metadata_map.find(kTuningResultsKeys);
@@ -251,7 +245,7 @@ Status ParseTuningResultsFromModelMetadata(const onnxruntime::ModelMetadata& met
   }
 
   key_found = true;
-  LOGS(logger, INFO) << "Found tuning results in the model file to be used while loading the model";
+  LOGS_DEFAULT(INFO) << "Found tuning results in the model file to be used while loading the model";
 
   Status status;
   ORT_TRY {

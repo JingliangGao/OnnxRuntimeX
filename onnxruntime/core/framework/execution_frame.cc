@@ -26,6 +26,17 @@
 using namespace onnxruntime::common;
 
 namespace onnxruntime {
+#ifdef ORT_ENABLE_STREAM
+static StreamAwareArena* AsStreamBasedAllocator(AllocatorPtr allocator) {
+  ORT_ENFORCE(allocator.get() != nullptr, "allocator is nullptr");
+  if (allocator->Info().alloc_type == OrtArenaAllocator) {
+    BFCArena* arena_ptr = static_cast<BFCArena*>(allocator.get());
+    return StreamAwareArena::FromBFCArena(*arena_ptr);
+  }
+  return nullptr;
+}
+#endif
+
 IExecutionFrame::IExecutionFrame(const OrtValueNameIdxMap& ort_value_idx_map,
                                  const NodeIndexInfo& node_index_info,
                                  gsl::span<const int> fetch_mlvalue_idxs)
@@ -127,6 +138,45 @@ Status IExecutionFrame::GetOutputs(gsl::span<const int> fetch_mlvalue_idxs, std:
 
 #endif
 
+#ifdef USE_PHYNPU
+const Status IExecutionFrame::SetPhyOutputMLValue(int index, const OrtValue* ort_value, int *out_arg_index) {
+  int ort_value_idx = GetNodeIdxToMLValueIdx(index);
+  if (ort_value_idx == NodeIndexInfo::kInvalidEntry || static_cast<size_t>(ort_value_idx) >= all_values_size_) {
+    return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, "invalid index ", ort_value_idx);
+  }
+
+  if(ort_value == nullptr) {
+    *out_arg_index = ort_value_idx;
+    LOGS_DEFAULT(WARNING) << "SetPhyOutputML nullptr Value ort_value_idx:"<<ort_value_idx;
+  } else {
+    all_values_[ort_value_idx] = *ort_value;
+    *out_arg_index = ort_value_idx;
+    LOGS_DEFAULT(WARNING) << "SetPhyOutputMLValue index:"<<index<<", ort_value_idx:"<<ort_value_idx;
+  }
+  return Status::OK();
+}
+
+const Status IExecutionFrame::SetPhyInputMLValue(int index, const OrtValue* ort_value, int *in_arg_index) {
+  int ort_value_idx = GetNodeIdxToMLValueIdx(index);
+  if (ort_value_idx == NodeIndexInfo::kInvalidEntry || static_cast<size_t>(ort_value_idx) >= all_values_size_) {
+    return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, "invalid index ", ort_value_idx);
+  }
+  
+  if(ort_value == nullptr) {
+    *in_arg_index = ort_value_idx;
+    LOGS_DEFAULT(WARNING) << "SetPhyInputML nullpter Value index:"<<ort_value_idx;
+  } else if(*in_arg_index >= 0 && ort_value != nullptr) {
+    all_values_[*in_arg_index] = *ort_value;
+    LOGS_DEFAULT(WARNING) << "SetPhyInputMLValue in_arg_index:"<<*in_arg_index;
+  } else {
+    all_values_[ort_value_idx] = *ort_value;
+    *in_arg_index = ort_value_idx;
+    LOGS_DEFAULT(WARNING) << "SetPhyInputMLValue index:"<<ort_value_idx;
+  }
+  return Status::OK();
+}
+#endif
+
 // Return nullptr if index map to a value that is an unused optional input/output
 const OrtValue* IExecutionFrame::GetNodeInputOrOutputMLValue(int index) const {
   int ort_value_idx = GetNodeIdxToMLValueIdx(index);
@@ -154,58 +204,19 @@ Status IExecutionFrame::GetOrCreateNodeOutputMLValue(const int output_index, int
     p_ort_value = &all_values_[ort_value_idx];
 
     if (p_ort_value->IsAllocated()) {
-      // The OrtValue at this index is already allocated. This happens when the caller provides
-      // a pre-allocated OrtValue as an output for Run(). IExecutionFrame::Init() populates
-      // all_values_ with caller-provided outputs (fetches) before any kernel executes.
-      // Each NodeArg in an ONNX graph has exactly one producer, so at this point no kernel
-      // in the current run could have written here — the only source is a value placed
-      // during Init().
-      //
-      // When the shapes match, we reuse the caller's buffer (zero-cost for repeated runs
-      // with the same shapes).
-      //
-      // When they differ, it means the caller supplied an output OrtValue whose shape does
-      // not match what the kernel computed for this run. This typically happens when the
-      // caller reuses the output OrtValue array across Run() calls with different input
-      // shapes on a model with dynamic dimensions. The caller should either supply
-      // unallocated output OrtValues or ensure the pre-allocated shape matches.
-      //
-      // Pre-run validation (ValidateInputsOutputs in inference_session.cc) catches
-      // structural mismatches (element type, rank, fixed dimensions) before execution
-      // begins. Only dynamic dimension differences reach this point, since the actual
-      // shape is only known once the kernel computes it.
-      bool shape_matched = true;
-
+      // already allocated. verify shape matches if tensor.
       if (p_ort_value->IsTensor()) {
-        ORT_RETURN_IF_NOT(shape != nullptr, "shape must not be null for tensor output that is already allocated");
         const Tensor& tensor = p_ort_value->Get<Tensor>();
-        shape_matched = (tensor.Shape() == *shape);
+        ORT_ENFORCE(shape && tensor.Shape() == *shape,
+                    "OrtValue shape verification failed. Current shape:", tensor.Shape(),
+                    " Requested shape:", shape ? shape->ToString() : "null");
       } else if (p_ort_value->IsSparseTensor()) {
 #if !defined(DISABLE_SPARSE_TENSORS)
-        ORT_RETURN_IF_NOT(shape != nullptr, "shape must not be null for sparse tensor output that is already allocated");
         const SparseTensor& sp_tensor = p_ort_value->Get<SparseTensor>();
-        shape_matched = (sp_tensor.DenseShape() == *shape);
+        ORT_ENFORCE(shape && sp_tensor.DenseShape() == *shape,
+                    "OrtValue shape verification failed. Current shape:", sp_tensor.DenseShape(),
+                    " Requested shape:", shape ? shape->ToString() : "null");
 #endif
-      }
-
-      if (!shape_matched) {
-        const TensorShape& existing_shape = p_ort_value->IsTensor()
-                                                ? p_ort_value->Get<Tensor>().Shape()
-#if !defined(DISABLE_SPARSE_TENSORS)
-                                                : p_ort_value->Get<SparseTensor>().DenseShape();
-#else
-                                                : *shape;  // unreachable, but satisfies compiler
-#endif
-        return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
-                               "The output OrtValue provided for output '",
-                               node.OutputDefs()[output_index]->Name(),
-                               "' of node '", node.Name(),
-                               "' (", node.OpType(), ") has shape ", existing_shape,
-                               " but the computed output shape for this run is ", *shape,
-                               ". When calling Run() with pre-allocated output OrtValues on a model "
-                               "with dynamic output shapes, either supply unallocated output OrtValues "
-                               "or ensure the pre-allocated shapes match the expected output shapes "
-                               "for each run.");
       }
     } else {
       // shape is nullptr for traditional ML output values
@@ -262,7 +273,6 @@ void IExecutionFrame::Init(gsl::span<const int> feed_mlvalue_idxs, gsl::span<con
   ORT_ENFORCE(feeds.size() == feed_mlvalue_idxs.size(), "Get feed size: ", feeds.size(), " but expected feed size: ",
               feed_mlvalue_idxs.size());
   ORT_ENFORCE(fetches.empty() || fetches.size() == fetch_mlvalue_idxs_.size());
-
   // Need this for sparse conversions in host memory
   AllocatorPtr cpu_allocator = GetAllocator(OrtDevice());
 
@@ -272,7 +282,6 @@ void IExecutionFrame::Init(gsl::span<const int> feed_mlvalue_idxs, gsl::span<con
   // 2. Handle non-empty output vector
   if (!fetches.empty()) {
     auto num_fetches = fetch_mlvalue_idxs_.size();
-
     for (size_t idx = 0; idx < num_fetches; ++idx) {
       int ort_value_idx = fetch_mlvalue_idxs_[idx];
       all_values_[ort_value_idx] = fetches[idx];
@@ -288,7 +297,6 @@ void IExecutionFrame::Init(gsl::span<const int> feed_mlvalue_idxs, gsl::span<con
   // involves a graph with a single Constant node.
   for (const auto& entry : initializers) {
     int ort_value_index = entry.first;
-
     // If the initializer is an output we need to allocate or use a provided fetch buffer and copy the data
     //  so it can be returned to the caller.
     //
@@ -469,23 +477,13 @@ ExecutionFrame::ExecutionFrame(gsl::span<const int> feed_mlvalue_idxs, gsl::span
 #endif
               // the memory pattern buffer will leave in the whole execution.
 #ifdef ORT_ENABLE_STREAM
-              if (alloc->IsStreamAware() && device_streams_) {
+              StreamAwareArena* stream_aware_alloc = AsStreamBasedAllocator(alloc);
+              if (stream_aware_alloc && device_streams_) {
                 Stream* mem_pattern_stream = device_streams_->GetRootStream();
-
-                buffer = alloc->AllocOnStream(peak_size, mem_pattern_stream);
-
-                // this seems unnecessary. any memory pattern buffer would be in use for the entire inference, so
-                // there's no point at which another stream (as streams are per-inference) would be able to use it.
-                // given that, it's unclear why we need to update the sync id in all other streams to allow them
-                // to take this buffer if it was free.
-                //
-                // device_stream_collection calls ReleaseStreamBuffers for all streams including the root stream in
-                // CleanUp, so the chunk will become available to other streams at that point.
-                //
-                // Commenting out to verify.
-                // for (size_t j = 0; j < device_streams_->NumStreams(); j++) {
-                //  stream_aware_arena->WaitOnChunk(mem_pattern_stream, device_streams_->GetStream(j));
-                //}
+                buffer = stream_aware_alloc->AllocOnStream(peak_size, mem_pattern_stream, nullptr);
+                for (size_t j = 0; j < device_streams_->NumStreams(); j++) {
+                  stream_aware_alloc->SecureTheChunk(mem_pattern_stream, device_streams_->GetStream(j), nullptr);
+                }
               } else {
                 buffer = alloc->Alloc(peak_size);
               }
@@ -567,11 +565,8 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(OrtValue& ort_va
     return Status(ONNXRUNTIME, FAIL, "Trying to allocate memory for unused optional inputs/outputs");
   }
 
-  // This alignment is used to properly space out individual chunks in mempatterns memory buffer.
-  const auto alignment = std::max(location.GetAlignment(), kAllocAlignment);
-
   size_t size = 0;
-  ORT_RETURN_IF_ERROR(Tensor::CalculateTensorStorageSize(element_type, shape, alignment, size));
+  ORT_RETURN_IF_ERROR(Tensor::CalculateTensorStorageSize(element_type, shape, kAllocAlignment, size));
 
   // Lazily get the allocator only if needed.
   AllocatorPtr alloc = nullptr;
@@ -619,9 +614,13 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(OrtValue& ort_va
   Stream* current_stream = GetValueStream(ort_value_index);
   if (current_stream) {
 #ifdef ORT_ENABLE_STREAM
-    if (alloc->IsStreamAware()) {
+    auto stream_aware_alloc = AsStreamBasedAllocator(alloc);
+    if (stream_aware_alloc) {
       size_t buffer_size = Tensor::CalculateTensorStorageSize(element_type, shape);
-      void* p_data = alloc->AllocOnStream(buffer_size, current_stream);
+      // the reused memory must from same EP
+      auto wait_handle = this->session_state_.GetStreamHandleRegistryInstance().GetWaitHandle(
+          current_stream->GetDevice().Type(), current_stream->GetDevice().Type());
+      void* p_data = stream_aware_alloc->AllocOnStream(buffer_size, current_stream, wait_handle);
       Tensor::InitOrtValue(element_type, shape, p_data, std::move(alloc), ort_value);
     } else {
       Tensor::InitOrtValue(element_type, shape, std::move(alloc), ort_value);
@@ -650,12 +649,6 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(OrtValue& ort_va
     session_state_.GetMemoryProfiler()->GetMemoryInfo().SetDynamicAllocation(ort_value_index);
 #endif
   }
-
-#if !defined(ORT_MINIMAL_BUILD)
-  if (session_state_.GetNodeStatsRecorder() != nullptr) {
-    ort_value_to_dynamic_allocations_size_.insert_or_assign(ort_value_index, size);
-  }
-#endif
 
   return Status::OK();
 }

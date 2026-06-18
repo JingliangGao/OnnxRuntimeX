@@ -21,14 +21,6 @@ struct ProviderInfo {
 constexpr ProviderInfo kProvidersInPriorityOrder[] =
     {
         {
-            kNvTensorRTRTXExecutionProvider,
-#ifdef USE_NV
-            true,
-#else
-            false,
-#endif
-        },
-        {
             kTensorrtExecutionProvider,
 #ifdef USE_TENSORRT
             true,
@@ -53,6 +45,14 @@ constexpr ProviderInfo kProvidersInPriorityOrder[] =
 #endif
         },
         {
+            kRocmExecutionProvider,
+#ifdef USE_ROCM
+            true,
+#else
+            false,
+#endif
+        },
+        {
             kOpenVINOExecutionProvider,
 #ifdef USE_OPENVINO
             true,
@@ -63,6 +63,14 @@ constexpr ProviderInfo kProvidersInPriorityOrder[] =
         {
             kDnnlExecutionProvider,
 #ifdef USE_DNNL
+            true,
+#else
+            false,
+#endif
+        },
+        {
+            kTvmExecutionProvider,
+#ifdef USE_TVM
             true,
 #else
             false,
@@ -117,6 +125,14 @@ constexpr ProviderInfo kProvidersInPriorityOrder[] =
 #endif
         },
         {
+            kArmNNExecutionProvider,
+#ifdef USE_ARMNN
+            true,
+#else
+            false,
+#endif
+        },
+        {
             kAclExecutionProvider,
 #ifdef USE_ACL
             true,
@@ -140,6 +156,12 @@ constexpr ProviderInfo kProvidersInPriorityOrder[] =
             false,
 #endif
         },
+#ifdef USE_PHYNPU
+        {
+            kPHYNPUExecutionProvider,
+            true,
+        },
+#endif
         {
             kWebNNExecutionProvider,
 #ifdef USE_WEBNN
@@ -150,7 +172,7 @@ constexpr ProviderInfo kProvidersInPriorityOrder[] =
         },
         {
             kWebGpuExecutionProvider,
-#if defined(USE_WEBGPU) && !defined(ORT_USE_EP_API_ADAPTERS)
+#ifdef USE_WEBGPU
             true,
 #else
             false,

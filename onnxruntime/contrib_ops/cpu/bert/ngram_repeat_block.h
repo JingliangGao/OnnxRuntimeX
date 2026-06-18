@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <atomic>
-
 #include "core/common/common.h"
 #include "core/common/narrow.h"
 #include "core/common/safeint.h"
@@ -46,9 +44,6 @@ class NGramRepeatBlock : public OpKernel {
 
     const auto* input_ids_data = static_cast<const int64_t*>(input_ids->DataRaw(input_ids->DataType()));
 
-    std::atomic<bool> has_invalid_token{false};
-    std::atomic<int64_t> invalid_token_id{0};
-
     auto lambda = [&](int64_t b) {
       for (int64_t i = 0; i < cur_len; ++i) {
         if (i + ngram_size_ > cur_len) {
@@ -67,11 +62,7 @@ class NGramRepeatBlock : public OpKernel {
 
         if (is_banned) {
           auto token_id = static_cast<int64_t>(input_ids_data[b * cur_len + i + ngram_size_ - 1]);
-          if (token_id < 0 || token_id >= vocab_size) {
-            has_invalid_token.store(true, std::memory_order_relaxed);
-            invalid_token_id.store(token_id, std::memory_order_relaxed);
-            return;
-          }
+          ORT_ENFORCE(token_id < vocab_size);
           scores_target[b * vocab_size + token_id] = -std::numeric_limits<float>::infinity();
         }
       }
@@ -85,12 +76,6 @@ class NGramRepeatBlock : public OpKernel {
             lambda(b);
           }
         });
-
-    if (has_invalid_token.load(std::memory_order_relaxed)) {
-      return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
-                             "NGramRepeatBlock: token_id ", invalid_token_id.load(std::memory_order_relaxed),
-                             " out of range [0, ", vocab_size, ")");
-    }
 
     return Status::OK();
   }

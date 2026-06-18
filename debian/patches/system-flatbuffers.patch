@@ -1,0 +1,15 @@
+Description: Use system flatbuffers lib (libflatbuffers-dev)
+Forwarded: not-needed
+Origin: https://src.fedoraproject.org/rpms/onnxruntime/blob/f40/f/system-flatbuffers.patch
+
+--- a/cmake/external/onnxruntime_external_deps.cmake
++++ b/cmake/external/onnxruntime_external_deps.cmake
+@@ -478,7 +478,7 @@
+     URL ${DEP_URL_flatbuffers}
+     URL_HASH SHA1=${DEP_SHA1_flatbuffers}
+     PATCH_COMMAND ${ONNXRUNTIME_FLATBUFFERS_PATCH_COMMAND}
+-    FIND_PACKAGE_ARGS 23.5.9 NAMES Flatbuffers flatbuffers
++    FIND_PACKAGE_ARGS 23.5.9 NAMES Flatbuffers flatbuffers FlatBuffers
+ )
+ 
+ onnxruntime_fetchcontent_makeavailable(flatbuffers)

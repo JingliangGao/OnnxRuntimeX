@@ -1,3 +1,2 @@
-onnx==1.22.0
+onnx==1.16.1
 pytest
-onnx-ir

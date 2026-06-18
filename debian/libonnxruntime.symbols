@@ -1,0 +1,5 @@
+libonnxruntime.so.1.20.1 #PACKAGE# #MINVER#
+* Build-Depends-Package: libonnxruntime-dev
+ OrtGetApiBase@VERS_1.20.1 1.20.1
+ OrtSessionOptionsAppendExecutionProvider_CPU@VERS_1.20.1 1.20.1
+ VERS_1.20.1@VERS_1.20.1 1.20.1

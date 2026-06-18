@@ -1,0 +1,3 @@
+Tests: build
+Depends: build-essential, pkgconf, libonnxruntime-dev
+Restrictions: superficial

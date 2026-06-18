@@ -34,7 +34,6 @@ class Attention : public OpKernel, public AttentionCPUBase {
                  /*out*/ PrePackedWeights* prepacked_weights) override;
 
   Status UseSharedPrePackedBuffers(std::vector<BufferUniquePtr>& prepacked_buffers,
-                                   gsl::span<const size_t> /*prepacked_buffer_sizes*/,
                                    int input_idx,
                                    /*out*/ bool& used_shared_buffers) override;
 
@@ -72,7 +71,7 @@ bool Attention<T>::IsPackWeightsSuccessful(int qkv_index,
                                            const T* weights_data,
                                            size_t weight_matrix_col_size,
                                            /*out*/ PrePackedWeights* prepacked_weights) {
-  size_t packb_size = MlasGemmPackBSize(CblasNoTrans, CblasNoTrans, head_size, input_hidden_size, &mlas_backend_kernel_selector_config_);
+  size_t packb_size = MlasGemmPackBSize(head_size, input_hidden_size);
   if (packb_size == 0) {
     return false;
   }
@@ -88,7 +87,7 @@ bool Attention<T>::IsPackWeightsSuccessful(int qkv_index,
   memset(packed_weights_data, 0, packed_weights_data_size);
 
   for (size_t i = 0; i < loop_len; i++) {
-    MlasGemmPackB(CblasNoTrans, CblasNoTrans, head_size, input_hidden_size, weights_data, weight_matrix_col_size, packed_weights_data, &mlas_backend_kernel_selector_config_);
+    MlasGemmPackB(CblasNoTrans, head_size, input_hidden_size, weights_data, weight_matrix_col_size, packed_weights_data);
     packed_weights_data += packb_size;
     weights_data += head_size;
   }
@@ -177,7 +176,6 @@ Status Attention<T>::PrePack(const Tensor& weights, int input_idx, AllocatorPtr 
 
 template <typename T>
 Status Attention<T>::UseSharedPrePackedBuffers(std::vector<BufferUniquePtr>& prepacked_buffers,
-                                               gsl::span<const size_t> /*prepacked_buffer_sizes*/,
                                                int input_idx,
                                                /*out*/ bool& used_shared_buffers) {
   if (1 != input_idx) {
@@ -301,36 +299,35 @@ Status Attention<T>::Compute(OpKernelContext* context) const {
                           packed_weights_size_[qkv_index] * (weights_offset / head_size);
 
           MlasGemm(
-              CblasNoTrans,                            // TransA = no
-              sequence_length,                         // M      = S
-              head_size,                               // N      = H
-              input_hidden_size,                       // K      = D
-              1.0f,                                    // alpha
-              input_data + input_offset,               // A
-              input_hidden_size,                       // lda    = D
-              packed_weight,                           // B
-              1.0f,                                    // beta
-              qkv_dest + qkv_offset,                   // C
-              head_size,                               // ldc
-              nullptr,                                 // use single-thread
-              &mlas_backend_kernel_selector_config_);  // BackendKernelSelectorConfig
+              CblasNoTrans,               // TransA = no
+              sequence_length,            // M      = S
+              head_size,                  // N      = H
+              input_hidden_size,          // K      = D
+              1.0f,                       // alpha
+              input_data + input_offset,  // A
+              input_hidden_size,          // lda    = D
+              packed_weight,              // B
+              1.0f,                       // beta
+              qkv_dest + qkv_offset,      // C
+              head_size,                  // ldc
+              nullptr);                   // use single-thread
         } else {
           math::GemmEx<float, ThreadPool>(
-              CblasNoTrans,                            // TransA = no
-              CblasNoTrans,                            // TransB = no
-              sequence_length,                         // M      = S
-              head_size,                               // N      = H
-              input_hidden_size,                       // K      = D
-              1.0f,                                    // alpha
-              input_data + input_offset,               // A
-              input_hidden_size,                       // lda    = D
-              weights_data + weights_offset,           // B
-              qkv_hidden_size,                         // ldb    = D + D + D_v
-              1.0f,                                    // beta
-              qkv_dest + qkv_offset,                   // C
-              head_size,                               // ldc
-              nullptr,                                 // use single-thread
-              &mlas_backend_kernel_selector_config_);  // BackendKernelSelectorConfig
+              CblasNoTrans,                   // TransA = no
+              CblasNoTrans,                   // TransB = no
+              sequence_length,                // M      = S
+              head_size,                      // N      = H
+              input_hidden_size,              // K      = D
+              1.0f,                           // alpha
+              input_data + input_offset,      // A
+              input_hidden_size,              // lda    = D
+              weights_data + weights_offset,  // B
+              qkv_hidden_size,                // ldb    = D + D + D_v
+              1.0f,                           // beta
+              qkv_dest + qkv_offset,          // C
+              head_size,                      // ldc
+              nullptr                         // use single-thread
+          );
         }
       }
     });
@@ -338,7 +335,7 @@ Status Attention<T>::Compute(OpKernelContext* context) const {
 
   // Compute the attention score and apply the score to V
   return ApplyAttention(Q, K, V, mask_index, past, nullptr /* past_key */, nullptr /* past_value */,
-                        output, nullptr /* present_key */, nullptr /* present_value */, nullptr /* output_qk */,
+                        output, nullptr /* present_key */, nullptr /* present_value */,
                         batch_size, sequence_length, sequence_length,
                         parameters.head_size, parameters.v_head_size, parameters.v_hidden_size,
                         attention_bias, context);

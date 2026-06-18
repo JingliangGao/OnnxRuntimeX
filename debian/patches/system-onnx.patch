@@ -1,0 +1,31 @@
+Description: Use system ONNX lib (libonnx-dev)
+Forwarded: not-needed
+Origin: https://src.fedoraproject.org/rpms/onnxruntime/blob/f40/f/system-onnx.patch
+Author: Alejandro Alvarez Ayllon <a.alvarezayllon@gmail.com>
+
+--- a/cmake/external/onnxruntime_external_deps.cmake
++++ b/cmake/external/onnxruntime_external_deps.cmake
+@@ -488,11 +488,7 @@
+   PATCH_COMMAND ${ONNXRUNTIME_ONNX_PATCH_COMMAND}
+   FIND_PACKAGE_ARGS NAMES ONNX onnx
+ )
+-if (NOT onnxruntime_MINIMAL_BUILD)
+-  onnxruntime_fetchcontent_makeavailable(onnx)
+-else()
+-  include(onnx_minimal)
+-endif()
++find_package(ONNX REQUIRED)
+ 
+ if(TARGET ONNX::onnx AND NOT TARGET onnx)
+   message(STATUS "Aliasing ONNX::onnx to onnx")
+@@ -546,10 +542,6 @@
+ set(onnxruntime_EXTERNAL_DEPENDENCIES onnx_proto flatbuffers::flatbuffers)
+ 
+ if(NOT (onnx_FOUND OR ONNX_FOUND)) # building ONNX from source
+-  target_compile_definitions(onnx PUBLIC $<TARGET_PROPERTY:onnx_proto,INTERFACE_COMPILE_DEFINITIONS> PRIVATE "__ONNX_DISABLE_STATIC_REGISTRATION")
+-  if (NOT onnxruntime_USE_FULL_PROTOBUF)
+-    target_compile_definitions(onnx PUBLIC "__ONNX_NO_DOC_STRINGS")
+-  endif()
+ endif()
+ 
+ if (onnxruntime_RUN_ONNX_TESTS)

@@ -17,7 +17,6 @@ class DataTransferManager {
   // static DataTransferManager& Instance();
 
   common::Status RegisterDataTransfer(std::unique_ptr<IDataTransfer> data_transfer);
-  common::Status UnregisterDataTransfer(IDataTransfer* data_transfer);
 
   const IDataTransfer* GetDataTransfer(const OrtDevice& src_device, const OrtDevice& dst_device) const;
 

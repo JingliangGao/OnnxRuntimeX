@@ -1,0 +1,278 @@
+Description: ARM32 has a limited support (see docs/Roadmap.md)
+ Several tests fail on this architecture, so skipping them for now.
+Author: Dylan Aïssi <daissi@debian.org>
+Forwarded: not-needed
+
+--- a/onnxruntime/test/optimizer/qdq_transformer_test.cc
++++ b/onnxruntime/test/optimizer/qdq_transformer_test.cc
+@@ -137,11 +137,13 @@
+   QDQTransformerConvTests<int8_t, int8_t, int32_t, uint8_t>();
+ }
+ 
++#if !defined(__arm__)
+ TEST(QDQTransformerTests, Conv_S8X8S8) {
+   // input not uint8_t and output not uint8_t
+   QDQTransformerConvTests<int8_t, uint8_t, int32_t, int8_t>();
+   QDQTransformerConvTests<int8_t, int8_t, int32_t, int8_t>();
+ }
++#endif  // #if !defined(__arm__)
+ 
+ TEST(QDQTransformerTests, ConvMaxPoolReshape_UInt8) {
+   auto test_case = [&](const std::vector<int64_t>& input_shape, const std::vector<int64_t>& weights_shape,
+@@ -214,6 +216,7 @@
+   test_case({1, 22, 11, 13, 15}, {30, 22, 5, 3, 3}, 19, true);  // Use com.microsoft QDQ ops
+ }
+ 
++#if !defined(__arm__)
+ TEST(QDQTransformerTests, ConvMaxPoolReshape_Int8) {
+   auto test_case = [&](const std::vector<int64_t>& input_shape, const std::vector<int64_t>& weights_shape,
+                        bool use_contrib_qdq = false) {
+@@ -688,10 +691,12 @@
+   QDQTransformerMatMulTests<uint8_t, int8_t, uint8_t>(true);
+ }
+ 
++#if !defined(__arm__)
+ TEST(QDQTransformerTests, MatMul_S8S8S8) {
+   QDQTransformerMatMulTests<int8_t, int8_t, int8_t>(false);
+   QDQTransformerMatMulTests<int8_t, int8_t, int8_t>(true);
+ }
++#endif  // #if !defined(__arm__)
+ 
+ TEST(QDQTransformerTests, MatMul_S8U8U8) {
+   QDQTransformerMatMulTests<int8_t, uint8_t, uint8_t>(false);
+@@ -703,10 +708,12 @@
+   QDQTransformerMatMulTests<int8_t, uint8_t, int8_t>(true);
+ }
+ 
++#if !defined(__arm__)
+ TEST(QDQTransformerTests, MatMul_S8S8U8) {
+   QDQTransformerMatMulTests<int8_t, int8_t, uint8_t>(false);
+   QDQTransformerMatMulTests<int8_t, int8_t, uint8_t>(true);
+ }
++#endif  // #if !defined(__arm__)
+ 
+ template <typename Input1Type, typename Input2Type, typename OutputType, typename BiasType = int32_t>
+ void QDQTransformerGemmTests(bool has_output_q, bool has_bias, bool beta_not_one = false) {
+@@ -873,10 +880,12 @@
+   QDQTransformerGemmTests<uint8_t, int8_t, uint8_t, uint8_t>();
+ }
+ 
++#if !defined(__arm__)
+ TEST(QDQTransformerTests, Gemm_S8S8S8) {
+   QDQTransformerGemmTests<int8_t, int8_t, int8_t>();
+   QDQTransformerGemmTests<int8_t, int8_t, int8_t, uint8_t>();
+ }
++#endif  // #if !defined(__arm__)
+ 
+ TEST(QDQTransformerTests, Gemm_S8U8U8) {
+   QDQTransformerGemmTests<int8_t, uint8_t, uint8_t>();
+@@ -888,10 +897,12 @@
+   QDQTransformerGemmTests<int8_t, uint8_t, int8_t, uint8_t>();
+ }
+ 
++#if !defined(__arm__)
+ TEST(QDQTransformerTests, Gemm_S8S8U8) {
+   QDQTransformerGemmTests<int8_t, int8_t, uint8_t>();
+   QDQTransformerGemmTests<int8_t, int8_t, uint8_t, uint8_t>();
+ }
++#endif  // #if !defined(__arm__)
+ 
+ // Runs a test case that checks if Q/DQ nodes are dropped from DQ -> Gather -> Q.
+ template <typename QuantType>
+@@ -2388,6 +2399,7 @@
+   test_case({1, 12, 37}, {32, 12, 5}, true /*use_contrib_qdq*/);
+ }
+ 
++#if !defined(__arm__)
+ TEST(QDQTransformerTests, ConvAveragePoolReshape_Int8) {
+   auto test_case = [&](const std::vector<int64_t>& input_shape, const std::vector<int64_t>& weights_shape,
+                        bool use_contrib_qdq) {
+@@ -2530,6 +2542,7 @@
+   test_case({1, 22, 11, 13, 15}, {30, 22, 5, 3, 3}, false /*use_contrib_qdq*/);
+   test_case({1, 12, 37}, {32, 12, 5}, true /*use_contrib_qdq*/);
+ }
++#endif  // #if !defined(__arm__)
+ 
+ template <typename InputType, typename OutputType>
+ void QDQTransformerLeakyReluTests() {
+@@ -2706,6 +2719,7 @@
+   QDQTransformerSigmoidTests<uint8_t, int8_t>();
+ }
+ 
++#if !defined(__arm__)
+ TEST(QDQTransformerTests, ConvTranspose_QBackward) {
+   auto test_case = [&](const std::vector<int64_t>& input_shape, const std::vector<int64_t>& weights_shape,
+                        const std::vector<int64_t>& perms, bool use_contrib_qdq) {
+@@ -3564,6 +3578,7 @@
+   test_case({1, 13, 13, 23}, 4, {0, 3, 1, 2}, true, true, true /*use_contrib_qdq*/);
+ #endif
+ }
++#endif  // #if !defined(__arm__)
+ 
+ TEST(QDQTransformerTests, QDQPropagation_StopAtOtherQDQ) {
+   auto test_case = [&](const std::vector<int64_t>& input_shape, bool same_scale, bool same_zp,
+@@ -3924,6 +3939,7 @@
+   run_test_case(/*slice_has_graph_output*/ false);
+   run_test_case(/*slice_has_graph_output*/ true);
+ }
++#endif  // #if !defined(__arm__)
+ 
+ TEST(QDQTransformerTests, QDQ_Selector_Test) {
+   const ORTCHAR_T* model_file_name = ORT_TSTR("testdata/transform/qdq_conv.onnx");
+--- a/onnxruntime/test/contrib_ops/math/matmul_sparse_test.cc
++++ b/onnxruntime/test/contrib_ops/math/matmul_sparse_test.cc
+@@ -140,6 +140,7 @@
+ }
+ */
+ #if !defined(DISABLE_SPARSE_TENSORS)
++#if !defined(__arm__)
+ TEST(SparseToDenseMatMul, TestCsr) {
+   constexpr int64_t rows = 9;
+   constexpr int64_t cols = 9;
+@@ -260,6 +261,7 @@
+     tester.Run(OpTester::ExpectResult::kExpectSuccess);
+   }
+ }
++#endif // #if !defined(__arm__)
+ 
+ TEST(SparseToDenseMatMul, TestCoo) {
+   constexpr int64_t rows = 9;
+@@ -381,4 +383,4 @@
+ #endif  // !defined(DISABLE_SPARSE_TENSORS)
+ 
+ }  // namespace test
+-}  // namespace onnxruntime
+\ No newline at end of file
++}  // namespace onnxruntime
+--- a/onnxruntime/test/contrib_ops/quant_gemm_test.cc
++++ b/onnxruntime/test/contrib_ops/quant_gemm_test.cc
+@@ -180,6 +180,7 @@
+                    false /*per_column*/);
+ }
+ 
++#if !defined(__arm__)
+ TEST(QuantGemmTest, Scalar) {
+   RunQuantGemmTestBatch(1, 1, 32);
+   RunQuantGemmTestBatch(1, 1, 260);
+@@ -194,6 +195,7 @@
+   RunQuantGemmTestBatch(1, 8, 400);
+   RunQuantGemmTestBatch(1, 512, 1024);
+ }
++#endif  // #if !defined(__arm__)
+ 
+ TEST(QuantGemmTest, GEMM) {
+   RunQuantGemmTestBatch(2, 2, 40);
+--- a/onnxruntime/test/providers/cpu/nn/qlinearconv_op_test.cc
++++ b/onnxruntime/test/providers/cpu/nn/qlinearconv_op_test.cc
+@@ -1080,6 +1080,7 @@
+   }
+ }
+ 
++#if !defined(__arm__)
+ TEST(QLinearConvTest, Conv1D_S8S8) {
+   QLinearConvOpTester<int8_t, int8_t> test;
+   test.GenerateRandomInput({3, 24, 15}, .05f, 4);
+@@ -1089,6 +1090,7 @@
+   test.SetOutputScaleAndZeroPoint(.55f, 54);
+   test.Run();
+ }
++#endif  // #if !defined(__arm__)
+ 
+ TEST(QLinearConvTest, Conv2D_S8S8_Sym_M64_C64) {
+   QLinearConvOpTester<int8_t, int8_t> test;
+@@ -1100,6 +1102,7 @@
+   test.Run();
+ }
+ 
++#if !defined(__arm__)
+ TEST(QLinearConvTest, Conv2D_S8S8_Sym_M16_C4_Bias) {
+   QLinearConvOpTester<int8_t, int8_t> test;
+   test.GenerateRandomInput({1, 4, 3, 3}, .05f, 4);
+@@ -1119,6 +1122,7 @@
+   test.SetOutputScaleAndZeroPoint(.55f, 54);
+   test.Run();
+ }
++#endif  // #if !defined(__arm__)
+ 
+ TEST(QLinearConvTest, Conv2D_S8S8_Sym_M48_C48_Bias_Pads) {
+   QLinearConvOpTester<int8_t, int8_t> test;
+@@ -1140,6 +1144,7 @@
+   test.Run();
+ }
+ 
++#if !defined(__arm__)
+ TEST(QLinearConvTest, Conv2D_S8S8) {
+   QLinearConvOpTester<int8_t, int8_t> test;
+   test.GenerateRandomInput({3, 24, 15, 11}, .05f, 4);
+@@ -1149,6 +1154,7 @@
+   test.SetOutputScaleAndZeroPoint(.55f, 54);
+   test.Run();
+ }
++#endif  // #if !defined(__arm__)
+ 
+ TEST(QLinearConvTest, Conv3D_S8S8) {
+   // TODO: Unskip when fixed #41968513
+@@ -1165,6 +1171,7 @@
+   test.Run();
+ }
+ 
++#if !defined(__arm__)
+ TEST(QLinearConvTest, Conv1D_S8S8_Pointwise) {
+   QLinearConvOpTester<int8_t, int8_t> test;
+   test.GenerateRandomInput({3, 24, 15}, .05f, 4);
+@@ -1191,6 +1198,7 @@
+   test.SetOutputScaleAndZeroPoint(.75f, -14);
+   test.Run();
+ }
++#endif  // #if !defined(__arm__)
+ 
+ TEST(QLinearConvTest, Conv3D_S8S8_Pointwise) {
+   // TODO: Unskip when fixed #41968513
+@@ -1206,6 +1214,7 @@
+   test.Run();
+ }
+ 
++#if !defined(__arm__)
+ TEST(QLinearConvTest, Conv1D_S8S8_Dilations) {
+   QLinearConvOpTester<int8_t, int8_t> test;
+   test.GenerateRandomInput({1, 4, 19}, .02f, 20);
+@@ -1214,6 +1223,7 @@
+   test.SetOutputScaleAndZeroPoint(.24f, -15);
+   test.Run();
+ }
++#endif  // #if !defined(__arm__)
+ 
+ TEST(QLinearConvTest, Conv2D_S8S8_Dilations) {
+   QLinearConvOpTester<int8_t, int8_t> test;
+@@ -1238,6 +1248,7 @@
+   test.Run();
+ }
+ 
++#if !defined(__arm__)
+ TEST(QLinearConvTest, Conv1D_S8S8_Strides) {
+   QLinearConvOpTester<int8_t, int8_t> test;
+   test.GenerateRandomInput({1, 7, 18}, .04f, 16);
+@@ -1349,6 +1360,7 @@
+   test.SetOutputScaleAndZeroPoint(.26f, 8);
+   test.Run();
+ }
++#endif  // #if !defined(__arm__)
+ 
+ TEST(QLinearConvTest, Conv1D_S8S8_Depthwise) {
+   for (int8_t weight_zero_point : std::initializer_list<int8_t>{-2, 0, 2}) {
+@@ -1462,6 +1474,7 @@
+   }
+ }
+ 
++#if !defined(__arm__)
+ TEST(QLinearConvTest, Conv2D_S8S8_Requantize_NoBias) {
+   for (int64_t channels = 1; channels <= 32; channels++) {
+     QLinearConvOpTester<int8_t, int8_t> test;
+@@ -1506,6 +1519,7 @@
+     test.Run();
+   }
+ }
++#endif  // #if !defined(__arm__)
+ 
+ TEST(QLinearConvTest, Conv2D_S8S8_Depthwise_Kernelsize) {
+   TestQLinearConv2dDepthwiseKernelsize<int8_t, int8_t>();

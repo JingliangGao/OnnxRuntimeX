@@ -10,7 +10,6 @@
 #include "core/common/narrow.h"
 #include "core/framework/op_kernel.h"
 #include "core/providers/cpu/rnn/rnn_helpers.h"
-#include "core/providers/cpu/mlas_backend_kernel_selector_config_utils.h"
 
 namespace onnxruntime {
 namespace contrib {
@@ -59,8 +58,6 @@ class DeepCpuAttnLstmOp final : public OpKernel {
     activation_funcs_ = ActivationFuncs(activation_func_names,
                                         activation_func_alphas,
                                         activation_func_betas);
-
-    SetupMlasBackendKernelSelectorFromConfigOptions(mlas_backend_kernel_selector_config_, info.GetConfigOptions());
   }
 
   Status Compute(OpKernelContext* context) const override;
@@ -95,8 +92,6 @@ class DeepCpuAttnLstmOp final : public OpKernel {
   bool input_forget_ = false;
 
   ActivationFuncs activation_funcs_;
-
-  MLAS_BACKEND_KERNEL_SELECTOR_CONFIG mlas_backend_kernel_selector_config_;
 };
 
 }  // namespace contrib

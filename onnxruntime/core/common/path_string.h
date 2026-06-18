@@ -40,12 +40,6 @@ inline PathString ToPathString(const PathString& s) {
 
 static_assert(std::is_same<PathString, std::wstring>::value, "PathString is not std::wstring!");
 
-inline PathString ToPathString(std::string_view s) {
-  return ToWideString(s);
-}
-inline PathString ToPathString(const char* s) {
-  return ToWideString(s);
-}
 inline PathString ToPathString(const std::string& s) {
   return ToWideString(s);
 }
@@ -61,14 +55,6 @@ inline std::string PathToUTF8String(const PathString& s) {
 #else
 
 static_assert(std::is_same<PathString, std::string>::value, "PathString is not std::string!");
-
-inline PathString ToPathString(const char* s) {
-  return s;
-}
-
-inline PathString ToPathString(std::string_view s) {
-  return PathString{s};
-}
 
 inline PathChar ToLowerPathChar(PathChar c) {
   return std::tolower(c);

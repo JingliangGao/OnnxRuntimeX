@@ -28,9 +28,7 @@ struct NextTokenScores {
   }
 
   void SetScore(int token_id, T score) {
-    if (token_id < 0 || token_id >= vocab_size) {
-      return;
-    }
+    assert(token_id >= 0 && token_id < vocab_size);
     for (int i = 0; i < batch_beam_size; i++) {
       scores[static_cast<gsl::index>(i) * vocab_size + token_id] = score;
     }

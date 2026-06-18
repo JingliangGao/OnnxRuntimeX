@@ -10,7 +10,7 @@
 #ifdef MLAS_F16VEC_INTRINSICS_SUPPORTED
 
 #include "core/common/safeint.h"
-#include "core/common/float16.h"
+#include "core/framework/float16.h"
 #include "core/framework/op_kernel.h"
 #include "core/providers/cpu/nn/conv_attributes.h"
 
@@ -54,7 +54,6 @@ class FusedConvFp16 final : public OpKernel {
                  /*out*/ bool& is_packed, /*out*/ PrePackedWeights* prepacked_weights) override;
 
   Status UseSharedPrePackedBuffers(std::vector<BufferUniquePtr>& prepacked_buffers,
-                                   gsl::span<const size_t> /*prepacked_buffer_sizes*/,
                                    int input_idx,
                                    /*out*/ bool& used_shared_buffers) override;
 
@@ -212,7 +211,6 @@ Status FusedConvFp16::PrePack(const Tensor& tensor, int input_idx, AllocatorPtr 
 }
 
 Status FusedConvFp16::UseSharedPrePackedBuffers(std::vector<BufferUniquePtr>& prepacked_buffers,
-                                                gsl::span<const size_t> /*prepacked_buffer_sizes*/,
                                                 int input_idx,
                                                 /*out*/ bool& used_shared_buffers) {
   if (input_idx != 1) {
@@ -418,8 +416,7 @@ Status FusedConvFp16::Compute(OpKernelContext* context) const {
           Xdata,
           static_cast<MLFloat16*>(transpose_input_buffer.get()),
           static_cast<size_t>(C),
-          static_cast<size_t>(input_image_size),
-          thread_pool);
+          static_cast<size_t>(input_image_size));
       input_data = static_cast<MLFloat16*>(transpose_input_buffer.get());
       output_data = static_cast<MLFloat16*>(transpose_output_buffer.get());
       add_src = nullptr;
@@ -576,8 +573,7 @@ Status FusedConvFp16::Compute(OpKernelContext* context) const {
           output_data,
           Ydata,
           static_cast<size_t>(output_image_size),
-          static_cast<size_t>(M),
-          thread_pool);
+          static_cast<size_t>(M));
       if (sum_data != nullptr) {
         MLAS_HALF_GEMM_ACTIVATION_PROCESSOR proc(activation_, sum_data);
         proc.Process(Ydata, 0, 0, static_cast<size_t>(M),
@@ -600,15 +596,9 @@ Status FusedConvFp16::Compute(OpKernelContext* context) const {
 // Operator definitions
 //
 
-ONNX_CPU_OPERATOR_VERSIONED_TYPED_KERNEL(
-    Conv,
-    11, 21, MLFloat16,
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<MLFloat16>()),
-    FusedConvFp16);
-
 ONNX_CPU_OPERATOR_TYPED_KERNEL(
     Conv,
-    22,
+    11,
     MLFloat16,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<MLFloat16>()),
     FusedConvFp16);

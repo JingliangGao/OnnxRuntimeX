@@ -102,15 +102,13 @@ class LpPool {
 
 class PoolBase {
  private:
-  template <typename KernelInfoType>
-  static int GetStartVersion(const KernelInfoType& info) {
+  static int GetStartVersion(const OpKernelInfo& info) {
     return info.node().SinceVersion();
   }
 
  protected:
-  template <typename KernelInfoType>
-  PoolBase(const KernelInfoType& info)
-      : op_name_(info.node().OpType().rfind("QLinear", 0) != 0 ? info.node().OpType() : info.node().OpType().substr(7)),
+  PoolBase(const OpKernelInfo& info)
+      : op_name_(info.GetKernelDef().OpName().rfind("QLinear", 0) != 0 ? info.GetKernelDef().OpName() : info.GetKernelDef().OpName().substr(7)),
         pool_attrs_(info, op_name_, GetStartVersion(info)) {
   }
 

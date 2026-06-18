@@ -23,7 +23,6 @@ bool DnnlSupportedGpuFound() {
 std::once_flag once_flag1;
 
 bool DnnlHasBF16Support() {
-#if defined(USE_DNNL)
   if (DnnlSupportedGpuFound()) {
     return true;
   }
@@ -50,7 +49,6 @@ bool DnnlHasBF16Support() {
       CPUIDInfo::GetCPUIDInfo().HasAMX_BF16()) {
     return true;
   }
-#endif
   return false;
 }
 }  // namespace test

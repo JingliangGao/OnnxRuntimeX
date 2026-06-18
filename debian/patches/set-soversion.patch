@@ -1,0 +1,19 @@
+Description: set SOVERSION for shared library. Upstream has simplified the
+ SONAME without saying anything about the API/ABI stability, see:
+ https://github.com/microsoft/onnxruntime/pull/21339
+ Until it's clarified let's reuse the previous behavior to avoid unexpected
+ breakage. This will require transition for every release, but it's safer.
+Author: Shengqi Chen <harry-chen@outlook.com>
+Forwarded: not-needed
+
+--- a/cmake/onnxruntime.cmake
++++ b/cmake/onnxruntime.cmake
+@@ -262,7 +262,7 @@
+       PUBLIC_HEADER "${ONNXRUNTIME_PUBLIC_HEADERS}"
+       LINK_DEPENDS ${SYMBOL_FILE}
+       VERSION ${ORT_VERSION}
+-      SOVERSION 1
++      SOVERSION ${ORT_VERSION}
+       FOLDER "ONNXRuntime")
+   endif()
+ else()

@@ -273,7 +273,7 @@ Status GreedySearchGpt<T, ParametersT>::Execute(const FeedsFetchesManager* init_
   while (current_length < parameters->max_length) {
 #ifdef DEBUG_GENERATION
     auto cur_len = std::to_string(current_length);
-    dumper->Print(::onnxruntime::MakeString("***CurrentLength=", cur_len));
+    dumper->Print("***CurrentLength", cur_len, true);
     dumper->Print("input_ids", feeds[0]);
     dumper->Print("position_ids", feeds[1]);
     dumper->Print("attention_mask", feeds[2]);
@@ -294,9 +294,7 @@ Status GreedySearchGpt<T, ParametersT>::Execute(const FeedsFetchesManager* init_
                                       ExecutionMode::ORT_SEQUENTIAL,
                                       this->context_.GetTerminateFlag(),
                                       this->context_.Logger(),
-                                      this->ort_stream_,
-                                      /*sync_subgraph_fetches*/ false,
-                                      this->context_.GetRunProfiler());
+                                      this->ort_stream_);
     } else {
 #ifdef DEBUG_NODE_INPUTS_OUTPUTS
       const_cast<SessionState&>(this->decoder_session_state_).IncrementGraphExecutionCounter();
@@ -309,9 +307,7 @@ Status GreedySearchGpt<T, ParametersT>::Execute(const FeedsFetchesManager* init_
                                       ExecutionMode::ORT_SEQUENTIAL,
                                       this->context_.GetTerminateFlag(),
                                       this->context_.Logger(),
-                                      this->ort_stream_,
-                                      /*sync_subgraph_fetches*/ false,
-                                      this->context_.GetRunProfiler());
+                                      this->ort_stream_);
     }
 
     ORT_RETURN_IF_ERROR(status);

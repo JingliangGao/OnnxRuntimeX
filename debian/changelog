@@ -1,0 +1,89 @@
+onnxruntime (1.20.1+dfsg-ok1.2k0.1update8) v11-2603-preview; urgency=medium
+
+  * BUG: 无
+  * 需求: 无
+  * 其他改动说明: #634969 飞腾npu的适配
+  * 其他改动影响域: 无
+
+ -- 刘意虎 <liuyihu@kylinos.cn>  Thu, 11 Jun 2026 22:34:00 +0800
+
+onnxruntime (1.20.1+dfsg-ok1.2k0.1update7) v11-2603-preview; urgency=medium
+
+  * BUG: 无
+  * 需求: 无
+  * 其他改动说明: #634969 飞腾npu的适配
+  * 其他改动影响域: 无
+
+ -- 刘意虎 <liuyihu@kylinos.cn>  Wed, 10 Jun 2026 14:36:02 +0800
+
+onnxruntime (1.20.1+dfsg-ok1.2k0.1update6) v11-2603-preview; urgency=medium
+
+  * BUG: #580029 安全编译整改
+  * 需求: 无
+  * 其他改动说明: 无
+  * 其他改动影响域: 无
+
+ -- 刘意虎 <liuyihu@kylinos.cn>  Sat, 19 May 2026 23:48:48 +0800
+
+onnxruntime (1.20.1+dfsg-ok1.2k0.1update5) v11-2603-preview; urgency=medium
+
+  * BUG: 无
+  * 需求: 无
+  * 其他改动说明: task: #624473 框架优化
+  * 其他改动影响域: 无
+
+ -- 刘意虎 <liuyihu@kylinos.cn>  Sat, 19 May 2026 23:48:48 +0800
+
+onnxruntime (1.20.1+dfsg-ok1.2k0.1update4) v11-2603-preview; urgency=medium
+
+  * BUG: 无
+  * 需求: 无
+  * 其他改动说明: task: #624473 框架优化
+  * 其他改动影响域: 无
+
+ -- 刘意虎 <liuyihu@kylinos.cn>  Sat, 18 May 2026 23:48:48 +0800
+
+onnxruntime (1.20.1+dfsg-ok1.2k0.1update3) v11-2603-preview; urgency=medium
+
+  * BUG: 无
+  * 需求: 无
+  * 其他改动说明: task: #624473 框架优化
+  * 其他改动影响域: 无
+
+ -- 刘意虎 <liuyihu@kylinos.cn>  Sat, 15 May 2026 23:48:48 +0800
+
+onnxruntime (1.20.1+dfsg-ok1.2k0.1update2) v11-2603-preview; urgency=medium
+
+  * BUG: 无
+  * 需求: 无
+  * 其他改动说明: task: #624473 框架优化
+  * 其他改动影响域: 无
+
+ -- 刘意虎 <liuyihu@kylinos.cn>  Sat, 03 May 2026 23:48:48 +0800
+
+onnxruntime (1.20.1+dfsg-ok1.2k0.1update1) v11-2603-preview; urgency=medium
+
+  * BUG: 无
+  * 需求: 无
+  * 其他改动说明: task: #624473 框架优化
+  * 其他改动影响域: 无
+
+ -- 刘意虎 <liuyihu@kylinos.cn>  Sat, 03 May 2026 23:48:48 +0800
+
+onnxruntime (1.20.1+dfsg-ok1.2k0.1) v11-2603-preview; urgency=medium
+
+  * BUG: #525941 解决内存泄露
+  * 需求: 无
+  * 其他改动说明: 无
+  * 其他改动影响域: 无
+
+ -- 刘意虎 <liuyihu@kylinos.cn>  Sat, 02 May 2026 23:48:48 +0800
+
+onnxruntime (1.20.1+dfsg-ok1.2) v11-2603-preview; urgency=medium
+
+  * BUG: #525941 修复加载卸载内存泄漏
+  * 需求: 无
+  * 其他改动说明: 无
+  * 其他改动影响域: 无
+
+ -- liuyihu <liuyihu@kylinos.cn>  Thu, 1 May 2026 11:25:34 +0800

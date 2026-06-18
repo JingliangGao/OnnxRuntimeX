@@ -1,0 +1,38 @@
+Description: Ignore GCC false positives
+Forwarded: not-needed
+Origin: https://src.fedoraproject.org/rpms/onnxruntime/blob/f40/f/gcc-false-positive.patch
+Author: Alejandro Álvarez Ayllón <a.alvarezayllon@gmail.com>
+
+--- a/onnxruntime/core/providers/cpu/tensor/scatter.cc
++++ b/onnxruntime/core/providers/cpu/tensor/scatter.cc
+@@ -16,6 +16,8 @@
+ #include "orttraining/training_ops/cpu/tensor/gather_elements_grad_impl.h"
+ #endif
+ 
++#pragma GCC diagnostic ignored "-Warray-bounds"
++
+ namespace onnxruntime {
+ 
+ namespace op_kernel_type_control {
+--- a/onnxruntime/test/framework/sparse_kernels_test.cc
++++ b/onnxruntime/test/framework/sparse_kernels_test.cc
+@@ -27,6 +27,8 @@
+ #include "core/util/math_cpuonly.h"
+ #include <Eigen/SparseCore>
+ 
++#pragma GCC diagnostic ignored "-Wdangling-reference"
++
+ using namespace ONNX_NAMESPACE;
+ using namespace onnxruntime::common;
+ 
+--- a/onnxruntime/core/optimizer/selectors_actions/selector_action_transformer.cc
++++ b/onnxruntime/core/optimizer/selectors_actions/selector_action_transformer.cc
+@@ -1,6 +1,8 @@
+ // Copyright (c) Microsoft Corporation. All rights reserved.
+ // Licensed under the MIT License.
+ 
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
++
+ #include "core/optimizer/selectors_actions/selector_action_transformer.h"
+ 
+ #include <algorithm>

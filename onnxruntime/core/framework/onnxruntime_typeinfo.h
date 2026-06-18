@@ -14,9 +14,8 @@ class DataTypeImpl;
 }  // namespace onnxruntime
 
 namespace ONNX_NAMESPACE {
-class TensorProto;
 class TypeProto;
-}  // namespace ONNX_NAMESPACE
+}
 
 // These types are only present in the winml adapter c api, so they are forward declared.
 struct OrtMapTypeInfo;
@@ -32,7 +31,7 @@ struct OrtTypeInfo {
   ONNXType type;
   std::string denotation;
 
-  std::unique_ptr<OrtTensorTypeAndShapeInfo> tensor_type_info;
+  std::unique_ptr<OrtTensorTypeAndShapeInfo> data;
   std::unique_ptr<OrtMapTypeInfo> map_type_info;
   std::unique_ptr<OrtSequenceTypeInfo> sequence_type_info;
   std::unique_ptr<OrtOptionalTypeInfo> optional_type_info;

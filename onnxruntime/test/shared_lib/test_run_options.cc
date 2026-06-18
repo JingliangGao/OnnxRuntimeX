@@ -12,10 +12,3 @@ TEST(CApiTest, run_options) {
   ASSERT_STREQ(options.GetRunTag(), "abc");
   ASSERT_EQ(options.GetRunLogVerbosityLevel(), 1);
 }
-
-TEST(CApiTest, run_options_config) {
-  Ort::RunOptions options;
-  options.AddConfigEntry("foo", "bar");
-  EXPECT_STREQ(options.GetConfigEntry("foo"), "bar");
-  EXPECT_EQ(options.GetConfigEntry("not foo"), nullptr);
-}

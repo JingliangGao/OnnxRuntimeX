@@ -23,6 +23,9 @@ struct Color {
 
 #ifndef _WIN32
 void OStreamSink::SendImpl(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) {
+  // operator for formatting of timestamp in ISO8601 format including microseconds
+  using timestamp_ns::operator<<;
+
   // Two options as there may be multiple calls attempting to write to the same sink at once:
   // 1) Use mutex to synchronize access to the stream.
   // 2) Create the message in an ostringstream and output in one call.
@@ -42,7 +45,8 @@ void OStreamSink::SendImpl(const Timestamp& timestamp, const std::string& logger
   }
 #endif
 
-  msg << timestamp << " [" << message.SeverityPrefix() << ":" << message.Category() << ":" << logger_id << ", "
+  timestamp_ns::operator<<(msg, timestamp);  // handle ambiguity with C++20 where date and std::chrono have operator<<
+  msg << " [" << message.SeverityPrefix() << ":" << message.Category() << ":" << logger_id << ", "
       << message.Location().ToString() << "] " << message.Message();
 
 #ifndef ORT_MINIMAL_BUILD
@@ -62,6 +66,9 @@ void OStreamSink::SendImpl(const Timestamp& timestamp, const std::string& logger
 }
 #else
 void WOStreamSink::SendImpl(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) {
+  // operator for formatting of timestamp in ISO8601 format including microseconds
+  using date::operator<<;
+
   // Two options as there may be multiple calls attempting to write to the same sink at once:
   // 1) Use mutex to synchronize access to the stream.
   // 2) Create the message in an ostringstream and output in one call.

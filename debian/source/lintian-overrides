@@ -1,0 +1,4 @@
+# This files lists licenses of third party libraries.
+# This JSON evil license comes from RapidJSON which is neither embedded
+# nor used in this package.
+onnxruntime source: license-problem-json-evil ThirdPartyNotices.txt

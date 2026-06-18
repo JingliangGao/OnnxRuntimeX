@@ -6,10 +6,10 @@
 #include <string>
 #include <unordered_map>
 
+#include "test/optimizer/qdq_test_utils.h"
 #include "test/providers/qnn/qnn_test_utils.h"
-#include "test/unittest_util/qdq_test_utils.h"
 
-#include "core/graph/onnx_protobuf.h"
+#include "onnx/onnx_pb.h"
 
 #include "gtest/gtest.h"
 
@@ -68,8 +68,11 @@ static void RunCPULogicalOpTest(const std::string& op_type, const std::vector<in
                                 int opset = 17) {
   ProviderOptions provider_options;
 
-  provider_options["backend_type"] = "cpu";
-  provider_options["offload_graph_io_quantization"] = "0";
+#if defined(_WIN32)
+  provider_options["backend_path"] = "QnnCpu.dll";
+#else
+  provider_options["backend_path"] = "libQnnCpu.so";
+#endif
 
   RunQnnModelTest(BuildLogicalOpTestCase(op_type, shape),
                   provider_options,
@@ -84,8 +87,11 @@ static void RunQDQLogicalOpTest(const std::string& op_type, const std::vector<in
                                 ExpectedEPNodeAssignment expected_ep_assignment,
                                 int opset = 17) {
   ProviderOptions provider_options;
-  provider_options["backend_type"] = "htp";
-  provider_options["offload_graph_io_quantization"] = "0";
+#if defined(_WIN32)
+  provider_options["backend_path"] = "QnnHtp.dll";
+#else
+  provider_options["backend_path"] = "libQnnHtp.so";
+#endif
 
   RunQnnModelTest(BuildQDQLogicalOpTestCase<QuantType>(op_type, shape),
                   provider_options,
@@ -146,8 +152,11 @@ TEST_F(QnnHTPBackendTests, LogicalOpLessOrEqual4D) {
 // Tests a QDQ graph with an Equal node followed by a Cast.
 TEST_F(QnnHTPBackendTests, EqualToCast4D) {
   ProviderOptions provider_options;
-  provider_options["backend_type"] = "htp";
-  provider_options["offload_graph_io_quantization"] = "0";
+#if defined(_WIN32)
+  provider_options["backend_path"] = "QnnHtp.dll";
+#else
+  provider_options["backend_path"] = "libQnnHtp.so";
+#endif
 
   // Model building function that creates a QDQ graph with an Equal node followed by
   // a Cast to float32.

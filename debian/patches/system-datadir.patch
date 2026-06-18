@@ -1,0 +1,39 @@
+Description: Use system ONNX data dir (python3-onnx and libonnx-testdata)
+Forwarded: not-needed
+Author: Andre Moreira Magalhaes <andrunko@gmail.com>
+
+--- a/cmake/onnxruntime_unittests.cmake
++++ b/cmake/onnxruntime_unittests.cmake
+@@ -1025,7 +1025,7 @@
+ if(NOT DEFINED onnx_SOURCE_DIR)
+   find_path(onnx_SOURCE_DIR NAMES "onnx/onnx-ml.proto3" "onnx/onnx-ml.proto" REQUIRED)
+ endif()
+-onnxruntime_protobuf_generate(APPEND_PATH IMPORT_DIRS ${onnx_SOURCE_DIR} TARGET onnx_test_data_proto)
++onnxruntime_protobuf_generate(APPEND_PATH IMPORT_DIRS ${onnxruntime_ONNX_PROTO_DATA_DIR} TARGET onnx_test_data_proto)
+ 
+ #
+ # onnxruntime_ir_graph test data
+@@ -1221,9 +1221,9 @@
+ 
+   if (NOT onnxruntime_REDUCED_OPS_BUILD AND NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+     add_test(NAME onnx_test_pytorch_converted
+-      COMMAND onnx_test_runner ${onnx_SOURCE_DIR}/onnx/backend/test/data/pytorch-converted)
++      COMMAND onnx_test_runner ${onnxruntime_ONNX_TEST_DATA_DIR}/pytorch-converted)
+     add_test(NAME onnx_test_pytorch_operator
+-      COMMAND onnx_test_runner ${onnx_SOURCE_DIR}/onnx/backend/test/data/pytorch-operator)
++      COMMAND onnx_test_runner ${onnxruntime_ONNX_TEST_DATA_DIR}/pytorch-operator)
+   endif()
+ 
+   if (CMAKE_SYSTEM_NAME STREQUAL "Android")
+--- a/cmake/CMakeLists.txt
++++ b/cmake/CMakeLists.txt
+@@ -126,6 +126,9 @@
+ option(onnxruntime_GCOV_COVERAGE "Compile with options necessary to run code coverage" OFF)
+ option(onnxruntime_DONT_VECTORIZE "Do not vectorize operations in Eigen" OFF)
+ 
++option(onnxruntime_ONNX_PROTO_DATA_DIR "Path where onnx/onnx-data.proto is located in your system, only used when onnxruntime_PREFER_SYSTEM_LIB is set")
++option(onnxruntime_ONNX_TEST_DATA_DIR "Path where onnx's pytorch-converted|operator test data in your system, only used when onnxruntime_PREFER_SYSTEM_LIB is set")
++
+ option(onnxruntime_USE_FULL_PROTOBUF "Link to libprotobuf instead of libprotobuf-lite when this option is ON" OFF)
+ option(onnxruntime_DEBUG_NODE_INPUTS_OUTPUTS "Dump debug information about node inputs and outputs when executing the model." OFF)
+ cmake_dependent_option(onnxruntime_DEBUG_NODE_INPUTS_OUTPUTS_ENABLE_DUMP_TO_SQLDB "Build dump debug information about node inputs and outputs with support for sql database." OFF "onnxruntime_DEBUG_NODE_INPUTS_OUTPUTS" OFF)

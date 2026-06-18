@@ -13,6 +13,7 @@
 #include "core/framework/execution_frame.h"
 #include "core/framework/ort_value_name_idx_map.h"
 #include "core/framework/ort_value.h"
+#include "core/framework/callback.h"
 
 namespace onnxruntime {
 class DataTransferManager;
@@ -26,19 +27,15 @@ class OptimizerExecutionFrame final : public IExecutionFrame {
          const InitializedTensorSet& initialized_tensor_set,
          const std::filesystem::path& model_path,
          const IExecutionProvider& execution_provider,
-         const std::function<bool(const std::string&)>& is_sparse_initializer_func,
-         const logging::Logger& logger);
+         const std::function<bool(const std::string&)>& is_sparse_initializer_func);
 
     Info(const std::vector<const Node*>& nodes,
          const std::unordered_map<std::string, OrtValue>& initialized_tensor_set,
          const std::filesystem::path& model_path,
          const IExecutionProvider& execution_provider,
-         const std::function<bool(const std::string&)>& is_sparse_initializer_func,
-         const logging::Logger& logger);
+         const std::function<bool(const std::string&)>& is_sparse_initializer_func);
 
-    // Destructor defined out-of-line so NodeIndexInfo is complete when
-    // unique_ptr<NodeIndexInfo> is destroyed (required by libc++).
-    ~Info();
+    ~Info() = default;
 
     const AllocatorPtr& GetAllocator() const {
       return allocator_ptr_;
@@ -79,7 +76,6 @@ class OptimizerExecutionFrame final : public IExecutionFrame {
     std::unique_ptr<NodeIndexInfo> node_index_info_;
     const IExecutionProvider& execution_provider_;
     const std::function<bool(const std::string&)>& is_sparse_initializer_func_;
-    const logging::Logger& logger_;
 
     ORT_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(Info);
   };

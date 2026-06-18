@@ -9,6 +9,7 @@ from helper import get_name
 from numpy.testing import assert_almost_equal
 from onnx import TensorProto, helper
 from onnx.defs import onnx_opset_version
+from onnx.mapping import TENSOR_TYPE_MAP
 
 import onnxruntime as onnxrt
 from onnxruntime.capi._pybind_state import OrtDevice as C_OrtDevice  # pylint: disable=E0611
@@ -167,7 +168,8 @@ class TestIOBinding(unittest.TestCase):
                 TensorProto.UINT64,
             ]:
                 with self.subTest(onnx_dtype=onnx_dtype, inner_device=str(inner_device)):
-                    np_dtype = helper.tensor_dtype_to_np_dtype(onnx_dtype)
+                    assert onnx_dtype in TENSOR_TYPE_MAP
+                    np_dtype = TENSOR_TYPE_MAP[onnx_dtype].np_dtype
                     x = np.arange(8).reshape((-1, 2)).astype(np_dtype)
 
                     # create onnx graph
@@ -196,7 +198,7 @@ class TestIOBinding(unittest.TestCase):
     # Test I/O binding with onnx types like bfloat16 and float8, which are not supported in numpy.
     def test_bind_onnx_types_not_supported_by_numpy(self):
         try:
-            import torch  # noqa: PLC0415
+            import torch
         except ImportError:
             self.skipTest("Skipping since PyTorch is not installed.")
 
@@ -219,8 +221,9 @@ class TestIOBinding(unittest.TestCase):
             )
 
         for inner_device, provider in devices:
-            for onnx_dtype, torch_dtype in onnx_to_torch_type_map.items():
+            for onnx_dtype in onnx_to_torch_type_map:
                 with self.subTest(onnx_dtype=onnx_dtype, inner_device=str(inner_device)):
+
                     # Create onnx graph with dynamic axes
                     X = helper.make_tensor_value_info("X", onnx_dtype, [None])  # noqa: N806
                     Y = helper.make_tensor_value_info("Y", onnx_dtype, [None])  # noqa: N806
@@ -236,6 +239,7 @@ class TestIOBinding(unittest.TestCase):
 
                     sess = onnxrt.InferenceSession(model_def.SerializeToString(), providers=provider)
 
+                    torch_dtype = onnx_to_torch_type_map[onnx_dtype]
                     x = torch.arange(8).to(torch_dtype)
                     y = torch.empty(8, dtype=torch_dtype)
 
@@ -440,32 +444,6 @@ class TestIOBinding(unittest.TestCase):
 
                 # Inspect contents of output_ortvalue and make sure that it has the right contents
                 self.assertTrue(np.array_equal(self._create_expected_output_alternate(), output_ortvalue.numpy()))
-
-    def test_bind_input_rejects_string_tensor(self):
-        # Binding a string tensor via a raw, non-owning pointer is unsafe: the backing buffer
-        # has no live std::string objects, which previously caused out-of-bounds writes when
-        # the tensor was later read or destroyed. Both overloads of bind_input (ONNX int
-        # element_type and numpy dtype) must reject string tensors explicitly.
-        session = onnxrt.InferenceSession(get_name("mul_1.onnx"), providers=onnxrt.get_available_providers())
-        io_binding = session.io_binding()
-
-        # Use a real allocation just to have a valid pointer; the type check happens before
-        # the pointer is dereferenced.
-        scratch = np.zeros(4, dtype=np.uint8)
-        scratch_ptr = scratch.ctypes.data
-
-        # Overload 1: int32 ONNX element type.
-        with self.assertRaisesRegex(RuntimeError, "Only binding non-string Tensors"):
-            io_binding.bind_input("X", "cpu", 0, int(TensorProto.STRING), [1], scratch_ptr)
-
-        # Overload 2: numpy dtype. NPY_UNICODE, NPY_STRING and NPY_OBJECT all map to
-        # std::string in NumpyTypeToOnnxRuntimeTensorType, so each of them must be rejected.
-        for dtype in (np.dtype("U1"), np.dtype("S1"), np.dtype(object)):
-            with (
-                self.subTest(dtype=dtype),
-                self.assertRaisesRegex(RuntimeError, "Only binding non-string Tensors"),
-            ):
-                io_binding.bind_input("X", "cpu", 0, dtype, [1], scratch_ptr)
 
 
 if __name__ == "__main__":

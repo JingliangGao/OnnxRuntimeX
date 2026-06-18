@@ -1,7 +1,7 @@
 import os
 
 import onnx
-from onnx import TensorProto, helper, shape_inference
+from onnx import AttributeProto, GraphProto, TensorProto, helper, shape_inference  # noqa: F401
 
 _this_dir = os.path.abspath(os.path.dirname(__file__))
 
@@ -21,7 +21,7 @@ def _onnx_export(graph_def, relative_path, verbose=False):
     if verbose:
         print()
         print(inferred_model)
-        import onnxruntime as rt  # noqa: PLC0415
+        import onnxruntime as rt
 
         rt.InferenceSession(model_path)
 

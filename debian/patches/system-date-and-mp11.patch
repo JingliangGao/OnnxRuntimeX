@@ -1,0 +1,83 @@
+Description: Use system date and mp11 libs (libhowardhinnant-date-dev and libboost-dev)
+Forwarded: not-needed
+Origin: https://src.fedoraproject.org/rpms/onnxruntime/blob/f40/f/system-date-and-mp11.patch
+
+--- a/cmake/external/onnxruntime_external_deps.cmake
++++ b/cmake/external/onnxruntime_external_deps.cmake
+@@ -247,21 +247,9 @@
+ set(ENABLE_DATE_TESTING  OFF CACHE BOOL "" FORCE)
+ set(USE_SYSTEM_TZ_DB  ON CACHE BOOL "" FORCE)
+ 
+-FetchContent_Declare(
+-  date
+-  URL ${DEP_URL_date}
+-  URL_HASH SHA1=${DEP_SHA1_date}
+-  FIND_PACKAGE_ARGS 3...<4 NAMES date
+-)
+-onnxruntime_fetchcontent_makeavailable(date)
++find_package(date)
++find_package(Boost)
+ 
+-FetchContent_Declare(
+-  mp11
+-  URL ${DEP_URL_mp11}
+-  URL_HASH SHA1=${DEP_SHA1_mp11}
+-  FIND_PACKAGE_ARGS NAMES Boost
+-)
+-onnxruntime_fetchcontent_makeavailable(mp11)
+ if(NOT TARGET Boost::mp11)
+   if(onnxruntime_USE_VCPKG)
+     find_package(Boost REQUIRED)
+--- a/cmake/onnxruntime_unittests.cmake
++++ b/cmake/onnxruntime_unittests.cmake
+@@ -776,7 +776,7 @@
+ if (onnxruntime_USE_ROCM)
+   target_include_directories(onnxruntime_test_utils PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/amdgpu/onnxruntime ${CMAKE_CURRENT_BINARY_DIR}/amdgpu/orttraining)
+ endif()
+-onnxruntime_add_include_to_target(onnxruntime_test_utils onnxruntime_common onnxruntime_framework onnxruntime_session GTest::gtest GTest::gmock onnx onnx_proto flatbuffers::flatbuffers nlohmann_json::nlohmann_json Boost::mp11 safeint_interface)
++onnxruntime_add_include_to_target(onnxruntime_test_utils onnxruntime_common onnxruntime_framework onnxruntime_session GTest::gtest GTest::gmock onnx onnx_proto flatbuffers::flatbuffers nlohmann_json::nlohmann_json Boost::boost safeint_interface)
+ 
+ 
+ 
+@@ -811,7 +811,7 @@
+       target_compile_options(onnx_test_runner_common PRIVATE "/wd4244")
+     endif()
+     onnxruntime_add_include_to_target(onnx_test_runner_common onnxruntime_common onnxruntime_framework
+-            onnxruntime_test_utils onnx onnx_proto re2::re2 flatbuffers::flatbuffers Boost::mp11 safeint_interface)
++            onnxruntime_test_utils onnx onnx_proto re2::re2 flatbuffers::flatbuffers Boost::boost safeint_interface)
+ 
+     add_dependencies(onnx_test_runner_common onnx_test_data_proto ${onnxruntime_EXTERNAL_DEPENDENCIES})
+     target_include_directories(onnx_test_runner_common PRIVATE ${eigen_INCLUDE_DIRS}
+--- a/cmake/onnxruntime_providers_cpu.cmake
++++ b/cmake/onnxruntime_providers_cpu.cmake
+@@ -155,7 +155,7 @@
+ #      target_compile_options(onnxruntime_providers PRIVATE "/wd4244")
+ #   endif()
+ endif()
+-onnxruntime_add_include_to_target(onnxruntime_providers onnxruntime_common onnxruntime_framework onnx onnx_proto ${PROTOBUF_LIB} flatbuffers::flatbuffers Boost::mp11 safeint_interface)
++onnxruntime_add_include_to_target(onnxruntime_providers onnxruntime_common onnxruntime_framework onnx onnx_proto ${PROTOBUF_LIB} flatbuffers::flatbuffers Boost::boost safeint_interface)
+ 
+ if (onnxruntime_BUILD_MS_EXPERIMENTAL_OPS)
+   target_compile_definitions(onnxruntime_providers PRIVATE BUILD_MS_EXPERIMENTAL_OPS=1)
+--- a/cmake/onnxruntime_providers_xnnpack.cmake
++++ b/cmake/onnxruntime_providers_xnnpack.cmake
+@@ -13,7 +13,7 @@
+   onnxruntime_add_static_library(onnxruntime_providers_xnnpack ${onnxruntime_providers_xnnpack_cc_srcs})
+   onnxruntime_add_include_to_target(onnxruntime_providers_xnnpack
+     onnxruntime_common onnxruntime_framework onnx onnx_proto ${PROTOBUF_LIB} XNNPACK pthreadpool
+-    flatbuffers::flatbuffers Boost::mp11 safeint_interface
++    flatbuffers::flatbuffers Boost::boost safeint_interface
+   )
+ 
+   # TODO fix stringop-overflow warnings
+--- a/cmake/onnxruntime_util.cmake
++++ b/cmake/onnxruntime_util.cmake
+@@ -10,7 +10,7 @@
+ 
+ onnxruntime_add_static_library(onnxruntime_util ${onnxruntime_util_srcs})
+ target_include_directories(onnxruntime_util PRIVATE ${ONNXRUNTIME_ROOT} PUBLIC ${eigen_INCLUDE_DIRS})
+-onnxruntime_add_include_to_target(onnxruntime_util onnxruntime_common onnx onnx_proto ${PROTOBUF_LIB} Boost::mp11)
++onnxruntime_add_include_to_target(onnxruntime_util onnxruntime_common onnx onnx_proto ${PROTOBUF_LIB} Boost::boost)
+ if(UNIX)
+     target_compile_options(onnxruntime_util PUBLIC "-Wno-error=comment")
+ endif()

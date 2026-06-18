@@ -3,11 +3,10 @@
 
 #pragma once
 
-#include <cstddef>
-#include <cstdint>
+#include <gsl/gsl>
 
 #include "core/common/common.h"
-#include "core/common/narrow.h"
+#include "core/common/exceptions.h"
 #include "core/framework/op_kernel.h"
 
 namespace onnxruntime {
@@ -17,15 +16,18 @@ class LRN : public OpKernel {
  public:
   LRN(const OpKernelInfo& info) : OpKernel(info) {
     int64_t size;
-    ORT_THROW_IF_ERROR(info.GetAttr<int64_t>("size", &size));
-    size_ = narrow<ptrdiff_t>(size);
+    ORT_ENFORCE(info.GetAttr<int64_t>("size", &size).IsOK());
+    size_ = gsl::narrow_cast<int>(size);
     ORT_ENFORCE(size_ > 0);
     ORT_ENFORCE(size_ % 2 == 1);
-    ORT_THROW_IF_ERROR(info.GetAttr<float>("alpha", &alpha_));
+    ORT_ENFORCE(info.GetAttr<float>("alpha", &alpha_).IsOK());
     ORT_ENFORCE(alpha_ > 0.0f);
-    ORT_THROW_IF_ERROR(info.GetAttr<float>("beta", &beta_));
+    ORT_ENFORCE(info.GetAttr<float>("beta", &beta_).IsOK());
     ORT_ENFORCE(beta_ > 0.0f);
-    ORT_THROW_IF_ERROR(info.GetAttr<float>("bias", &bias_));
+    Status status = info.GetAttr<float>("bias", &bias_);
+    if (!status.IsOK()) {
+      bias_ = 1.0f;
+    }
   }
 
   Status Compute(OpKernelContext* p_op_kernel_context) const override;
@@ -34,6 +36,6 @@ class LRN : public OpKernel {
   float alpha_;
   float beta_;
   float bias_;
-  ptrdiff_t size_;
+  int size_;
 };
 }  // namespace onnxruntime

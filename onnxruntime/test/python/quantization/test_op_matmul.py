@@ -9,6 +9,7 @@ import unittest
 
 import numpy as np
 import onnx
+import packaging.version as pv
 from numpy.testing import assert_almost_equal
 from onnx import TensorProto, helper
 from op_test_utils import TestDataFeeds, check_model_correctness, check_op_type_count, check_qtype_by_node_type
@@ -33,7 +34,7 @@ def skip_if_new_opset_exception_raised(func):
 class TestOpMatMul(unittest.TestCase):
     def test_entropy(self):
         try:
-            from scipy.stats import entropy as scipy_entropy  # noqa: PLC0415
+            from scipy.stats import entropy as scipy_entropy
         except ImportError:
             raise unittest.SkipTest("scipy not installed.")  # noqa: B904
         pk = (np.arange(10) - 5).astype(np.float32) / 10
@@ -440,7 +441,9 @@ class TestOpMatMul(unittest.TestCase):
     def test_quantize_matmul_e4m3fn_same(self):
         self.quantize_matmul_e4m3fn_same(onnx.TensorProto.FLOAT, 18, 8)
 
-    @unittest.skip(reason="Too many bins for data range.")
+    @unittest.skipIf(
+        pv.Version(onnx.__version__) < pv.Version("1.15.1"), reason="Shape inference bug, see onnx PR #5709"
+    )
     def test_quantize_matmul_e4m3fn_same_f16(self):
         self.quantize_matmul_e4m3fn_same(onnx.TensorProto.FLOAT16, 19, 9)
 
@@ -472,7 +475,9 @@ class TestOpMatMul(unittest.TestCase):
     def test_quantize_matmul_e4m3fn_p3(self):
         self.quantize_matmul_e4m3fn_p3(onnx.TensorProto.FLOAT, 18, 8)
 
-    @unittest.skip(reason="Too many bins for data range.")
+    @unittest.skipIf(
+        pv.Version(onnx.__version__) < pv.Version("1.15.1"), reason="Shape inference bug, see onnx PR #5709"
+    )
     def test_quantize_matmul_e4m3fn_p3_f16(self):
         self.quantize_matmul_e4m3fn_p3(onnx.TensorProto.FLOAT16, 19, 9)
 

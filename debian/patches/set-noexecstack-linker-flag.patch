@@ -1,0 +1,21 @@
+Description: Add linker flag to disable executable stack (#1098205)
+Author: Aurelien Jarno <aurel32@debian.org>
+Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1098205
+Last-Update: 2025-02-19 
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/cmake/onnxruntime_python.cmake
++++ b/cmake/onnxruntime_python.cmake
+@@ -113,10 +113,10 @@
+   set(ONNXRUNTIME_SO_LINK_FLAG "-Xlinker -exported_symbols_list -Xlinker ${ONNXRUNTIME_ROOT}/python/exported_symbols.lst")
+ elseif(UNIX)
+   if (onnxruntime_ENABLE_EXTERNAL_CUSTOM_OP_SCHEMAS)
+-    set(ONNXRUNTIME_SO_LINK_FLAG "-Xlinker --version-script=${ONNXRUNTIME_ROOT}/python/version_script_expose_onnx_protobuf.lds -Xlinker --gc-sections")
++    set(ONNXRUNTIME_SO_LINK_FLAG "-Xlinker --version-script=${ONNXRUNTIME_ROOT}/python/version_script_expose_onnx_protobuf.lds -Xlinker --gc-sections -z noexecstack")
+   else()
+     if (NOT CMAKE_SYSTEM_NAME MATCHES "AIX")
+-      set(ONNXRUNTIME_SO_LINK_FLAG "-Xlinker --version-script=${ONNXRUNTIME_ROOT}/python/version_script.lds -Xlinker --gc-sections")
++      set(ONNXRUNTIME_SO_LINK_FLAG "-Xlinker --version-script=${ONNXRUNTIME_ROOT}/python/version_script.lds -Xlinker --gc-sections -z noexecstack")
+     endif()
+   endif()
+ else()

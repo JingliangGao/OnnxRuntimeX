@@ -9,7 +9,7 @@
 #include "test/providers/provider_test_utils.h"
 #include "test/util/include/default_providers.h"
 
-#if defined(ENABLE_STRIDED_TENSORS) && defined(USE_CUDA)
+#if defined(ENABLE_STRIDED_TENSORS) && (defined(USE_CUDA) || defined(USE_ROCM))
 #include "test/providers/kernel_compute_test_utils.h"
 #endif
 
@@ -216,7 +216,7 @@ void RunTestWrapper<std::string>() {
   test8.Run();
 }
 
-#if defined(ENABLE_STRIDED_TENSORS) && defined(USE_CUDA)
+#if defined(ENABLE_STRIDED_TENSORS) && (defined(USE_CUDA) || defined(USE_ROCM))
 template <typename T, typename TIndex>
 void RunKernelComputeTest(std::initializer_list<int64_t> input_dims, std::initializer_list<int64_t> indices_dims,
                           std::initializer_list<int64_t> indices_strides = {}, bool has_axis = false,
@@ -228,6 +228,8 @@ void RunKernelComputeTest(std::initializer_list<int64_t> input_dims, std::initia
   GetData(input_dims, indices_dims, indices_strides, new_axis, input_data, indices_data, output_data);
 #ifdef USE_CUDA
   const char* provider = kCudaExecutionProvider;
+#else  // USE_ROCM
+  const char* provider = kRocmExecutionProvider;
 #endif
   KernelComputeTester test("GatherElements", provider);
   if (has_axis) test.AddAttribute<int64_t>("axis", axis);
@@ -387,10 +389,9 @@ TEST(GatherElementsOpTest, IndicesOutOfBounds) {
   // skip openvino which will not throw error message but will ensure no out-of-bound access
   // skip TensorRT because it doesn't support out of bounds indices
   // skip QNN because it doesn't support out of bounds indices
-  // skip WebGPU because it doesn't support out of bounds indices
   test.Run(OpTester::ExpectResult::kExpectFailure, "",
-           {kCudaExecutionProvider, kCudaNHWCExecutionProvider, kOpenVINOExecutionProvider,
-            kTensorrtExecutionProvider, kDmlExecutionProvider, kQnnExecutionProvider, kWebGpuExecutionProvider});
+           {kCudaExecutionProvider, kCudaNHWCExecutionProvider, kRocmExecutionProvider, kOpenVINOExecutionProvider,
+            kTensorrtExecutionProvider, kDmlExecutionProvider, kQnnExecutionProvider});
 }
 
 TEST(GatherElementsOpTest, BigIndices) {
@@ -411,7 +412,7 @@ TEST(GatherElementsOpTest, BigIndices) {
   test1.Run();
 }
 
-#if defined(ENABLE_STRIDED_TENSORS) && defined(USE_CUDA)
+#if defined(ENABLE_STRIDED_TENSORS) && (defined(USE_CUDA) || defined(USE_ROCM))
 TEST(GatherElementsOpTest, Strided_float) { RunKernelComputeTestWrapper<float>(); }
 
 TEST(GatherElementsOpTest, Strided_double) { RunKernelComputeTestWrapper<double>(); }

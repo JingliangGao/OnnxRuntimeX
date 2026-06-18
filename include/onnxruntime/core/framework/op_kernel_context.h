@@ -192,7 +192,7 @@ class OpKernelContext {
   onnxruntime::NodeIndex GetNodeIndex() const;
 
   virtual const OrtValue* GetInputMLValue(int index) const;
-  virtual const OrtValue* GetImplicitInputMLValue(int index) const;
+  const OrtValue* GetImplicitInputMLValue(int index) const;
   OrtValue* GetOutputMLValue(int index);
 
 #ifdef ENABLE_ATEN
@@ -204,7 +204,8 @@ class OpKernelContext {
 
   virtual OrtValue* GetOrCreateOutputMLValue(int index);
 
-  virtual int GetOrtValueIndexForOutput(int output_index) const;
+  const Status SetPhyOutputMLValue(int index, const OrtValue* ort_value, int *out_arg_index) const;
+  const Status SetPhyInputMLValue(int index, const OrtValue* ort_value, int *in_arg_index) const;
 
  private:
   ORT_DISALLOW_COPY_AND_ASSIGNMENT(OpKernelContext);

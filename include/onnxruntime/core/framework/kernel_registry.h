@@ -8,9 +8,6 @@
 #include "core/framework/op_kernel.h"
 
 namespace onnxruntime {
-namespace logging {
-class Logger;
-}
 
 using KernelCreateMap = std::multimap<std::string, KernelCreateInfo>;
 using KernelDefHashes = std::vector<std::pair<std::string, HashValue>>;
@@ -36,7 +33,6 @@ class KernelRegistry {
   // Kernel matching uses the types from the node and the kernel_type_str_resolver.
   Status TryFindKernel(const Node& node, ProviderType exec_provider,
                        const IKernelTypeStrResolver& kernel_type_str_resolver,
-                       const logging::Logger& logger,
                        const KernelCreateInfo** out) const;
 
   // map of type constraint name to required type
@@ -46,7 +42,6 @@ class KernelRegistry {
   // Kernel matching uses the explicit type constraint name to required type map in type_constraints.
   Status TryFindKernel(const Node& node, ProviderType exec_provider,
                        const TypeConstraintMap& type_constraints,
-                       const logging::Logger& logger,
                        const KernelCreateInfo** out) const;
 
   /**
@@ -66,15 +61,13 @@ class KernelRegistry {
                        std::string_view domain,
                        int version,
                        const KernelRegistry::TypeConstraintMap& type_constraints,
-                       const logging::Logger& logger,
                        const KernelCreateInfo** out) const;
 
   static bool HasImplementationOf(const KernelRegistry& r, const Node& node,
                                   ProviderType exec_provider,
-                                  const IKernelTypeStrResolver& kernel_type_str_resolver,
-                                  const logging::Logger& logger) {
+                                  const IKernelTypeStrResolver& kernel_type_str_resolver) {
     const KernelCreateInfo* info;
-    Status st = r.TryFindKernel(node, exec_provider, kernel_type_str_resolver, logger, &info);
+    Status st = r.TryFindKernel(node, exec_provider, kernel_type_str_resolver, &info);
     return st.IsOK();
   }
 
@@ -90,7 +83,6 @@ class KernelRegistry {
   Status TryFindKernelImpl(const Node& node, ProviderType exec_provider,
                            const IKernelTypeStrResolver* kernel_type_str_resolver,
                            const TypeConstraintMap* type_constraints,
-                           const logging::Logger& logger,
                            const KernelCreateInfo** out) const;
 
   // Check whether the types of inputs/outputs of the given node match the extra

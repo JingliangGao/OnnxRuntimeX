@@ -30,12 +30,9 @@ void SGEMM(benchmark::State& state, bool pack_b, bool trans_a, bool trans_b, flo
                                                  tpo, onnxruntime::concurrency::ThreadPoolType::INTRA_OP));
 
   if (pack_b) {
-    CBLAS_TRANSPOSE transB_enum = trans_b ? CblasTrans : CblasNoTrans;
-    CBLAS_TRANSPOSE transA_enum = trans_a ? CblasTrans : CblasNoTrans;
-
-    size_t pack_b_size = MlasGemmPackBSize(transA_enum, transB_enum, N, K, nullptr);
+    size_t pack_b_size = MlasGemmPackBSize(N, K);
     std::vector<float> B_packed(pack_b_size);
-    MlasGemmPackB(transA_enum, transB_enum, N, K, B.data(), N, B_packed.data(), nullptr);
+    MlasGemmPackB(CblasNoTrans, N, K, B.data(), N, B_packed.data());
 
     MlasGemm(
         trans_a ? CblasTrans : CblasNoTrans,
@@ -49,7 +46,7 @@ void SGEMM(benchmark::State& state, bool pack_b, bool trans_a, bool trans_b, flo
         beta,
         C.data(),
         N,
-        tp.get(), nullptr);
+        tp.get());
 
     for (auto _ : state) {
       MlasGemm(
@@ -64,7 +61,7 @@ void SGEMM(benchmark::State& state, bool pack_b, bool trans_a, bool trans_b, flo
           beta,
           C.data(),
           N,
-          tp.get(), nullptr);
+          tp.get());
     }
 
   } else {
@@ -82,7 +79,7 @@ void SGEMM(benchmark::State& state, bool pack_b, bool trans_a, bool trans_b, flo
         beta,
         C.data(),
         N,
-        tp.get(), nullptr);
+        tp.get());
 
     for (auto _ : state) {
       MlasGemm(
@@ -99,7 +96,7 @@ void SGEMM(benchmark::State& state, bool pack_b, bool trans_a, bool trans_b, flo
           beta,
           C.data(),
           N,
-          tp.get(), nullptr);
+          tp.get());
     }
   }
 }

@@ -12,7 +12,7 @@ using namespace onnxruntime::concurrency;
 
 // Thread pool configuration to test.
 constexpr int NUM_THREADS = 8;
-constexpr int SPIN_DURATION_US = kSpinDurationDefault;
+constexpr bool ALLOW_SPINNING = true;
 
 static void BM_CreateThreadPool(benchmark::State& state) {
   for (auto _ : state) {
@@ -20,7 +20,7 @@ static void BM_CreateThreadPool(benchmark::State& state) {
                   onnxruntime::ThreadOptions(),
                   ORT_TSTR(""),
                   NUM_THREADS,
-                  SPIN_DURATION_US);
+                  ALLOW_SPINNING);
   }
 }
 BENCHMARK(BM_CreateThreadPool)
@@ -37,7 +37,7 @@ BENCHMARK(BM_CreateThreadPool)
 void SimpleForLoop(ptrdiff_t first, ptrdiff_t last) {
   size_t sum = 0;
   for (; first != last; ++first) {
-    benchmark::DoNotOptimize(++sum);
+    ++sum;
   }
 }
 #ifdef _WIN32
@@ -53,7 +53,7 @@ static void BM_ThreadPoolParallelFor(benchmark::State& state) {
   auto tp = std::make_unique<ThreadPool>(&onnxruntime::Env::Default(),
                                          onnxruntime::ThreadOptions(),
                                          nullptr,
-                                         NUM_THREADS, SPIN_DURATION_US);
+                                         NUM_THREADS, ALLOW_SPINNING);
   for (auto _ : state) {
     ThreadPool::TryParallelFor(tp.get(), len, cost, SimpleForLoop);
   }
@@ -98,12 +98,11 @@ static void BM_ThreadPoolSimpleParallelFor(benchmark::State& state) {
   auto tp = std::make_unique<ThreadPool>(&onnxruntime::Env::Default(),
                                          onnxruntime::ThreadOptions(),
                                          nullptr,
-                                         num_threads, SPIN_DURATION_US);
+                                         num_threads, ALLOW_SPINNING);
   for (auto _ : state) {
     for (int j = 0; j < 100; j++) {
       ThreadPool::TrySimpleParallelFor(tp.get(), len, [&](size_t) {
-        for (size_t x = 0; x < body; x++) {
-          benchmark::DoNotOptimize(x);
+        for (volatile size_t x = 0; x < body; x++) {
         }
       });
     }

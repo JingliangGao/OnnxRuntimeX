@@ -1,0 +1,29 @@
+Description: Use system safeint lib (libsafeint-dev)
+Forwarded: not-needed
+Origin: https://src.fedoraproject.org/rpms/onnxruntime/blob/f40/f/system-safeint.patch
+Author: Alejandro Alvarez Ayllon <a.alvarezayllon@gmail.com>, Dylan Aïssi <daissi@debian.org>
+
+--- a/cmake/external/onnxruntime_external_deps.cmake
++++ b/cmake/external/onnxruntime_external_deps.cmake
+@@ -411,10 +411,9 @@
+   )
+ 
+   # use fetch content rather than makeavailable because safeint only includes unconditional test targets
+-  FetchContent_Populate(safeint)
+ endif()
+ add_library(safeint_interface INTERFACE)
+-target_include_directories(safeint_interface INTERFACE ${safeint_SOURCE_DIR})
++target_include_directories(safeint_interface INTERFACE /usr/include/safeint)
+ 
+ 
+ # Flatbuffers
+--- a/onnxruntime/core/common/safeint.h
++++ b/onnxruntime/core/common/safeint.h
+@@ -24,6 +24,7 @@
+ 
+ #define SAFEINT_EXCEPTION_HANDLER_CPP 1
+ #define SafeIntDefaultExceptionHandler SafeIntExceptionHandler<onnxruntime::OnnxRuntimeException>
++#define SAFEINT_CPP_THROW noexcept(false)
+ 
+ #if defined(__GNUC__)
+ #include "onnxruntime_config.h"
