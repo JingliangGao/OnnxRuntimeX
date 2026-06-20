@@ -1,0 +1,31 @@
+#!/bin/sh
+# autopkgtest check: Build and run a program against libonnxruntime, to verify that
+# the headers and pkg-config file are installed correctly
+
+set -e
+
+if [ -n "${DEB_HOST_GNU_TYPE:-}" ]; then
+    CROSS_COMPILE="$DEB_HOST_GNU_TYPE-"
+else
+    CROSS_COMPILE=
+fi
+
+cat <<EOF > libonnxruntime_test.c
+#include <onnxruntime_c_api.h>
+#include <stdio.h>
+
+int main(void)
+{
+  printf("%s\n", OrtGetApiBase()->GetVersionString());
+  return 0;
+}
+EOF
+
+# deliberately word-splitting pkg-config output:
+# shellcheck disable=SC2046
+"${CROSS_COMPILE}gcc" -o libonnxruntime_test libonnxruntime_test.c \
+$("${CROSS_COMPILE}pkg-config" --cflags --libs libonnxruntime)
+echo "build: OK"
+[ -x libonnxruntime_test ]
+./libonnxruntime_test
+echo "run: OK"

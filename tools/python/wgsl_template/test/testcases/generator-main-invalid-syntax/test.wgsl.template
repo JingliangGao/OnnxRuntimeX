@@ -1,5 +1,0 @@
-$MAIN 
-    // Missing opening brace - should cause an error
-    let index = global_id.x;
-    output[index] = input[index] * 2.0;
-}

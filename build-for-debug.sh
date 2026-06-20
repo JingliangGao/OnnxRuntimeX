@@ -3,7 +3,7 @@
 CURRENT_DIR=$(pwd)
 UNIT_TESTS=ON
 BUILD_FOLDER="build"
-ONNX_ROOT="<path-to-onnx>"    # eg: /home/kylin/gjl/project/onnx_depend/onnx
+ONNX_ROOT="/home/kylin/gjl/project/onnx_depend/onnx"
 
 clear
 
@@ -22,11 +22,11 @@ if [ -e "build.ninja" ]; then
     rm *.log
     rm *.onnx
     rm CMakeFiles.txt
-    rm .ninja_deps
+    rm .ninja_deps 
     rm .ninja_log
     rm CMakeCache.txt
     rm -rf CMakeFiles/
-    rm CTestTestfile.cmake
+    rm CTestTestfile.cmake 
     rm PROJECT_CONFIG_FILE
     rm build*.log
     rm debian/debhelper-build-stamp
@@ -44,8 +44,8 @@ if [ -e "build.ninja" ]; then
     rm generated_source.c
     rm generated_source.cinstall_manifest.txt
     rm DartConfiguration.tcl
-    rm cmake_install.cmake
-    rm install_manifest.txt
+    rm cmake_install.cmake 
+    rm install_manifest.txt 
     rm libonnxruntime.pc
     rm libonnxruntime.so
     rm onnxruntimeConfig.cmake
@@ -119,7 +119,7 @@ if [ "$1" == "local" ]; then
 else
     echo "[INFO] start build deb package ... "
     dpkg-buildpackage -T clean
-    dpkg-buildpackage -us -uc -b
+    dpkg-buildpackage -us -uc -b 
 fi
 
 echo "[INFO] All done!"

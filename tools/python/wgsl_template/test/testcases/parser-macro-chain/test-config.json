@@ -1,4 +1,0 @@
-{
-  "type": "parser",
-  "description": "Test macro chaining where macros can reference other previously defined macros"
-}

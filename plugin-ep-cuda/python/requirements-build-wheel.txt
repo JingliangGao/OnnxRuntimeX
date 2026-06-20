@@ -1,4 +1,0 @@
-setuptools>=68.0
-wheel
-auditwheel; sys_platform == "linux"
-patchelf; sys_platform == "linux"

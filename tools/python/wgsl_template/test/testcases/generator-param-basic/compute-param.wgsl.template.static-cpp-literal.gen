@@ -1,3 +1,0 @@
-ss << "let size = ";
-ss << __param_BUFFER_SIZE;
-ss << ";\n";

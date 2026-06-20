@@ -1,0 +1,30 @@
+KYLIN: 
+#[KYLIN/UBUNTU/GITHUB]: [module]/[submodule]: a short describe to this patch
+
+# Mainline: KYLIN-only/upstream-commit-id
+Mainline: KYLIN-only
+
+#
+# From: Project and Tag, Like From: llama.cpp or b5093
+# Use 'git tag --sort=taggerdate --contains=commit-id' to find it, It's the first tag.
+# Note: If Mainline is upstream-commit-id, you must have From label.
+# From: NA
+#
+# Severity: Low/Moderate/Important/Critical
+Severity: Low
+#
+# CVE: CVE-id
+#
+# bug and task id, they are a link to pm.kylin.com.
+# Bug/Task: #1234
+Task: #ID
+
+#Conflicts: NA/conflict-description-when-BP-from-mailine/LTS
+
+You should include at least one of the flollwing:
+   1) Why we should apply this patch
+   2) What problem does this patch resolved
+   3) How could we reproduce this bug or how to test
+
+# K2CI-Arch: None/{Arm64|Amd64|Mips64|Loongarch}/All
+# K2CI-Arch: All
